@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/hypebeast/go-osc/osc"
+	"github.com/crgimenes/go-osc/osc"
 )
 
 func main() {
