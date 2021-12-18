@@ -1,6 +1,5 @@
 # GoOSC
 
-[![Build Status](https://travis-ci.org/crgimenes/go-osc.png?branch=master)](https://travis-ci.org/crgimenes/go-osc) [![GoDoc](https://godoc.org/github.com/crgimenes/go-osc/osc?status.svg)](https://godoc.org/github.com/crgimenes/go-osc/osc) [![Coverage Status](https://coveralls.io/repos/github/crgimenes/go-osc/badge.svg?branch=master)](https://coveralls.io/github/crgimenes/go-osc?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/crgimenes/go-osc)](https://goreportcard.com/report/github.com/crgimenes/go-osc)
 
 [Open Sound Control (OSC)](http://opensoundcontrol.org/introduction-osc) library for Golang. Implemented in pure Go.
