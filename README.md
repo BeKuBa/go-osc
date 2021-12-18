@@ -42,7 +42,7 @@ go get github.com/crgimenes/go-osc
 ### Client
 
 ```go
-import "github.com/crgimenes/go-osc/osc"
+import "github.com/crgimenes/go-osc"
 
 func main() {
     client := osc.NewClient("localhost", 8765)
@@ -59,7 +59,7 @@ func main() {
 ```go
 package main
 
-import "github.com/crgimenes/go-osc/osc"
+import "github.com/crgimenes/go-osc"
 
 func main() {
     addr := "127.0.0.1:8765"

@@ -533,14 +533,18 @@ func TestParsePacket(t *testing.T) {
 		pkt  Packet
 		ok   bool
 	}{
-		{"no_args",
+		{
+			"no_args",
 			"/a/b/c" + nulls(2) + "," + nulls(3),
 			makePacket("/a/b/c", nil),
-			true},
-		{"string_arg",
+			true,
+		},
+		{
+			"string_arg",
 			"/d/e/f" + nulls(2) + ",s" + nulls(2) + "foo" + nulls(1),
 			makePacket("/d/e/f", []string{"foo"}),
-			true},
+			true,
+		},
 		{"empty", "", nil, false},
 	} {
 		pkt, err := ParsePacket(tt.msg)
