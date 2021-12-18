@@ -285,7 +285,7 @@ func (msg *Message) CountArguments() int {
 // has the following format:
 // 1. OSC Address Pattern
 // 2. OSC Type Tag String
-// 3. OSC Arguments
+// 3. OSC Arguments.
 func (msg *Message) MarshalBinary() ([]byte, error) {
 	// We can start with the OSC address and add it to the buffer
 	data := new(bytes.Buffer)
@@ -409,7 +409,7 @@ func (b *Bundle) Append(pck Packet) error {
 // 3. Length of first OSC bundle element
 // 4. First bundle element
 // 5. Length of n OSC bundle element
-// 6. n bundle element
+// 6. n bundle element.
 func (b *Bundle) MarshalBinary() ([]byte, error) {
 	// Add the '#bundle' string
 	data := new(bytes.Buffer)
@@ -611,7 +611,7 @@ func (s *Server) readFromConnection(c net.PacketConn) (Packet, error) {
 	return p, nil
 }
 
-// ParsePacket parses the given msg string and returns a Packet
+// ParsePacket parses the given msg string and returns a Packet.
 func ParsePacket(msg string) (Packet, error) {
 	var start int
 	p, err := readPacket(bufio.NewReader(bytes.NewBufferString(msg)), &start, len(msg))
@@ -623,7 +623,7 @@ func ParsePacket(msg string) (Packet, error) {
 
 // receivePacket receives an OSC packet from the given reader.
 func readPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
-	//var buf []byte
+	// var buf []byte
 	buf, err := reader.Peek(1)
 	if err != nil {
 		return nil, err
@@ -819,7 +819,8 @@ func NewTimetag(timeStamp time.Time) *Timetag {
 	return &Timetag{
 		time:     timeStamp,
 		timeTag:  timeToTimetag(timeStamp),
-		MinValue: uint64(1)}
+		MinValue: uint64(1),
+	}
 }
 
 // NewTimetagFromTimetag creates a new Timetag from the given `timetag`.
@@ -845,7 +846,7 @@ func (t *Timetag) SecondsSinceEpoch() uint32 {
 	return uint32(t.timeTag >> 32)
 }
 
-// TimeTag returns the time tag value
+// TimeTag returns the time tag value.
 func (t *Timetag) TimeTag() uint64 {
 	return t.timeTag
 }
@@ -892,7 +893,7 @@ func (t *Timetag) ExpiresIn() time.Duration {
 // 200 picoseconds. This is the representation used by Internet NTP timestamps.
 //
 // The time tag value consisting of 63 zero bits followed by a one in the least
-// significant bit is a special case meaning "immediately."
+// significant bit is a special case meaning "immediately.".
 func timeToTimetag(time time.Time) (timetag uint64) {
 	timetag = uint64((secondsFrom1900To1970 + time.Unix()) << 32)
 	return (timetag + uint64(uint32(time.Nanosecond())))
