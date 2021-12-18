@@ -5,6 +5,13 @@
 
 [Open Sound Control (OSC)](http://opensoundcontrol.org/introduction-osc) library for Golang. Implemented in pure Go.
 
+---
+
+This repository is a heavily modified fork of the [original go-osc](https://github.com/hypebeast/go-osc). Please consider using the original project.
+
+---
+
+
 ## Features
 
 - OSC Bundles, including timetags
