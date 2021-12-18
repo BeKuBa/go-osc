@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crgimenes/go-osc/osc"
+	"github.com/crgimenes/go-osc"
 )
 
 // TODO: Revise the client!
