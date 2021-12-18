@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -34,7 +33,7 @@ type Message struct {
 }
 
 // Verify that Messages implements the Packet interface.
-var _ Packet = (*Message)(nil)
+// var _ Packet = (*Message)(nil)
 
 // Bundle represents an OSC bundle. It consists of the OSC-string "#bundle"
 // followed by an OSC Time Tag, followed by zero or more OSC bundle/message
@@ -47,7 +46,7 @@ type Bundle struct {
 }
 
 // Verify that Bundle implements the Packet interface.
-var _ Packet = (*Bundle)(nil)
+// var _ Packet = (*Bundle)(nil)
 
 // Client enables you to send OSC packets. It sends OSC messages and bundles to
 // the given IP address and port.
@@ -122,32 +121,32 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 		s.defaultHandler = handler
 		return nil
 	}
+
 	for _, chr := range "*?,[]{}# " {
 		if strings.Contains(addr, fmt.Sprintf("%c", chr)) {
-			return errors.New("OSC Address string may not contain any characters in \"*?,[]{}#")
+			return ERROR_OSC_INVALID_CHARACTER
 		}
 	}
 
 	if addressExists(addr, s.handlers) {
-		return errors.New("OSC address exists already")
+		return ERROR_OSC_ADDRESS_EXISTS
 	}
 
 	s.handlers[addr] = handler
+
 	return nil
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
 func (s *StandardDispatcher) Dispatch(packet Packet) {
 	switch p := packet.(type) {
-	default:
-		return
-
 	case *Message:
 		for addr, handler := range s.handlers {
 			if p.Match(addr) {
 				handler.HandleMessage(p)
 			}
 		}
+
 		if s.defaultHandler != nil {
 			s.defaultHandler.HandleMessage(p)
 		}
@@ -163,6 +162,7 @@ func (s *StandardDispatcher) Dispatch(packet Packet) {
 						handler.HandleMessage(message)
 					}
 				}
+
 				if s.defaultHandler != nil {
 					s.defaultHandler.HandleMessage(message)
 				}
@@ -212,16 +212,13 @@ func (msg *Message) ClearData() {
 // address. The match is case sensitive!
 func (msg *Message) Match(addr string) bool {
 	exp := getRegEx(msg.Address)
-	if exp.MatchString(addr) {
-		return true
-	}
-	return false
+	return exp.MatchString(addr)
 }
 
 // TypeTags returns the type tag string.
 func (msg *Message) TypeTags() (string, error) {
 	if msg == nil {
-		return "", fmt.Errorf("message is nil")
+		return "", ERROR_MESSAGE_IS_NIL
 	}
 
 	tags := ","
@@ -301,9 +298,6 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 	for _, arg := range msg.Arguments {
 		// FIXME: Use t instead of arg
 		switch t := arg.(type) {
-		default:
-			return nil, fmt.Errorf("OSC - unsupported type: %T", t)
-
 		case bool:
 			if arg.(bool) == true {
 				typetags = append(typetags, 'T')
@@ -360,6 +354,8 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			if _, err = payload.Write(b); err != nil {
 				return nil, err
 			}
+		default:
+			return nil, fmt.Errorf("OSC - unsupported type: %T", t)
 		}
 	}
 
@@ -389,14 +385,14 @@ func NewBundle(time time.Time) *Bundle {
 // Append appends an OSC bundle or OSC message to the bundle.
 func (b *Bundle) Append(pck Packet) error {
 	switch t := pck.(type) {
-	default:
-		return fmt.Errorf("unsupported OSC packet type: only Bundle and Message are supported")
-
 	case *Bundle:
 		b.Bundles = append(b.Bundles, t)
 
 	case *Message:
 		b.Messages = append(b.Messages, t)
+
+	default:
+		return ERROR_UNSUPORTED_PACKAGE
 	}
 
 	return nil
@@ -422,6 +418,7 @@ func (b *Bundle) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if _, err = data.Write(bd); err != nil {
 		return nil, err
 	}
@@ -496,7 +493,9 @@ func (c *Client) SetLocalAddr(ip string, port int) error {
 	if err != nil {
 		return err
 	}
+
 	c.laddr = laddr
+
 	return nil
 }
 
@@ -506,10 +505,12 @@ func (c *Client) Send(packet Packet) error {
 	if err != nil {
 		return err
 	}
+
 	conn, err := net.DialUDP("udp", c.laddr, addr)
 	if err != nil {
 		return err
 	}
+
 	defer conn.Close()
 
 	data, err := packet.MarshalBinary()
@@ -517,10 +518,9 @@ func (c *Client) Send(packet Packet) error {
 		return err
 	}
 
-	if _, err = conn.Write(data); err != nil {
-		return err
-	}
-	return nil
+	_, err = conn.Write(data)
+
+	return err
 }
 
 ////
@@ -598,6 +598,7 @@ func (s *Server) readFromConnection(c net.PacketConn) (Packet, error) {
 	}
 
 	data := make([]byte, 65535)
+
 	n, _, err := c.ReadFrom(data)
 	if err != nil {
 		return nil, err
@@ -605,20 +606,15 @@ func (s *Server) readFromConnection(c net.PacketConn) (Packet, error) {
 
 	var start int
 	p, err := readPacket(bufio.NewReader(bytes.NewBuffer(data)), &start, n)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+
+	return p, err
 }
 
 // ParsePacket parses the given msg string and returns a Packet.
 func ParsePacket(msg string) (Packet, error) {
 	var start int
 	p, err := readPacket(bufio.NewReader(bytes.NewBufferString(msg)), &start, len(msg))
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+	return p, err
 }
 
 // receivePacket receives an OSC packet from the given reader.
@@ -735,9 +731,6 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 
 	for _, c := range typetags {
 		switch c {
-		default:
-			return fmt.Errorf("unsupported type tag: %c", c)
-
 		case 'i': // int32
 			var i int32
 			if err = binary.Read(reader, binary.BigEndian, &i); err != nil {
@@ -804,6 +797,9 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 
 		case 'F': // false
 			msg.Append(false)
+
+		default:
+			return fmt.Errorf("unsupported type tag: %c", c)
 		}
 	}
 
