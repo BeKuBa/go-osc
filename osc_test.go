@@ -24,8 +24,9 @@ func TestMessage_Append(t *testing.T) {
 	message.Append(123456789)
 	message.Append(true)
 
-	if message.CountArguments() != 3 {
-		t.Errorf("Number of arguments should be %d and is %d", 3, message.CountArguments())
+	lenArgs := len(message.Arguments)
+	if lenArgs != 3 {
+		t.Errorf("Number of arguments should be %d and is %d", 3, lenArgs)
 	}
 }
 
@@ -144,7 +145,8 @@ func TestServerMessageDispatching(t *testing.T) {
 	server := &Server{Addr: addr, Dispatcher: d}
 
 	defer func() {
-		if err := server.CloseConnection(); err != nil {
+		err := server.Close()
+		if err != nil {
 			t.Error(err)
 		}
 	}()
@@ -152,8 +154,9 @@ func TestServerMessageDispatching(t *testing.T) {
 	if err := d.AddMsgHandler(
 		"/address/test",
 		func(msg *Message) {
-			if len(msg.Arguments) != 1 {
-				t.Errorf("Argument length should be 1 and is: %d", len(msg.Arguments))
+			lenArgs := len(msg.Arguments)
+			if lenArgs != 1 {
+				t.Errorf("Argument length should be 1 and is: %d", lenArgs)
 			}
 
 			if msg.Arguments[0].(int32) != 1122 {
@@ -238,8 +241,9 @@ func TestServerMessageReceiving(t *testing.T) {
 		}
 
 		msg := packet.(*Message)
-		if msg.CountArguments() != 2 {
-			t.Errorf("Argument length should be 2 and is: %d\n", msg.CountArguments())
+		lenArg := len(msg.Arguments)
+		if lenArg != 2 {
+			t.Errorf("Argument length should be 2 and is: %d\n", lenArg)
 		}
 		if msg.Arguments[0].(int32) != 1122 {
 			t.Error("Argument should be 1122 and is: " + string(msg.Arguments[0].(int32)))
