@@ -32,20 +32,19 @@ func main() {
 			}
 
 			if packet != nil {
-				switch packet.(type) {
+				switch p := packet.(type) {
 				default:
 					fmt.Println("Unknow packet type!")
 
 				case *osc.Message:
-					fmt.Printf("-- OSC Message: ")
-					osc.PrintMessage(packet.(*osc.Message))
+					fmt.Println("-- OSC Message:", p)
 
 				case *osc.Bundle:
 					fmt.Println("-- OSC Bundle:")
-					bundle := packet.(*osc.Bundle)
-					for i, message := range bundle.Messages {
+
+					for i, message := range p.Messages {
 						fmt.Printf("  -- OSC Message #%d: ", i+1)
-						osc.PrintMessage(message)
+						fmt.Println(message)
 					}
 				}
 			}
@@ -57,7 +56,8 @@ func main() {
 	for {
 		c, err := reader.ReadByte()
 		if err != nil {
-			os.Exit(0)
+			fmt.Println("Error reading from stdin:", err)
+			os.Exit(1)
 		}
 
 		if c == 'q' {

@@ -998,10 +998,11 @@ func readPaddedString(reader *bufio.Reader) (string, int, error) {
 	if err != nil {
 		return "", 0, err
 	}
-	n := len(str)
+	lenStr := len(str)
+	n := lenStr
 
 	// Remove the padding bytes (leaving the null delimiter)
-	padLen := padBytesNeeded(len(str))
+	padLen := padBytesNeeded(lenStr)
 	if padLen > 0 {
 		n += padLen
 		padBytes := make([]byte, padLen)
@@ -1011,7 +1012,7 @@ func readPaddedString(reader *bufio.Reader) (string, int, error) {
 	}
 
 	// Strip off the string delimiter
-	return str[:len(str)-1], n, nil
+	return str[:lenStr-1], n, nil
 }
 
 // writePaddedString writes a string with padding bytes to the a buffer.
@@ -1056,11 +1057,6 @@ func padBytesNeeded(elementLen int) int {
 ////
 // Utility and helper functions
 ////
-
-// PrintMessage pretty prints an OSC message to the standard output.
-func PrintMessage(msg *Message) {
-	fmt.Println(msg)
-}
 
 // addressExists returns true if the OSC address `addr` is found in `handlers`.
 func addressExists(addr string, handlers map[string]Handler) bool {
