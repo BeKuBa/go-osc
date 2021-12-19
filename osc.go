@@ -213,29 +213,20 @@ func (msg *Message) Match(addr string) bool {
 	return getRegEx(msg.Address).MatchString(addr)
 }
 
-// TypeTags returns the type tag string.
-func (msg *Message) TypeTags() (string, error) {
-	if msg == nil {
-		return "", ERROR_TT_MESSAGE_IS_NIL
-	}
-
+// typeTags returns the type tag string.
+func (msg *Message) typeTags() string {
 	if len(msg.Arguments) == 0 {
-		return ",", nil
+		return ","
 	}
 
 	var tags strings.Builder
 	_ = tags.WriteByte(',')
 
 	for _, m := range msg.Arguments {
-		s, err := GetTypeTag(m)
-		if err != nil {
-			return "", err
-		}
-
-		tags.WriteString(s)
+		tags.WriteByte(getTypeTag(m))
 	}
 
-	return tags.String(), nil
+	return tags.String()
 }
 
 // String implements the fmt.Stringer interface.
@@ -245,7 +236,7 @@ func (msg *Message) String() string {
 	}
 
 	var s strings.Builder
-	tags, _ := msg.TypeTags()
+	tags := msg.typeTags()
 
 	s.WriteString(fmt.Sprintf("%s %s", msg.Address, tags))
 
@@ -1089,31 +1080,31 @@ func getRegEx(pattern string) *regexp.Regexp {
 	return regexp.MustCompile(pattern)
 }
 
-// GetTypeTag returns the OSC type tag for the given argument.
-func GetTypeTag(arg interface{}) (string, error) {
+// getTypeTag returns the OSC type tag for the given argument.
+func getTypeTag(arg interface{}) byte {
 	switch t := arg.(type) {
 	case bool:
-		if arg.(bool) {
-			return "T", nil
+		if t {
+			return 'T'
 		}
-		return "F", nil
+		return 'F'
 	case nil:
-		return "N", nil
+		return 'N'
 	case int32:
-		return "i", nil
+		return 'i'
 	case float32:
-		return "f", nil
+		return 'f'
 	case string:
-		return "s", nil
+		return 's'
 	case []byte:
-		return "b", nil
+		return 'b'
 	case int64:
-		return "h", nil
+		return 'h'
 	case float64:
-		return "d", nil
+		return 'd'
 	case Timetag:
-		return "t", nil
+		return 't'
 	default:
-		return "", fmt.Errorf("Unsupported type: %T", t)
+		return '\xff'
 	}
 }

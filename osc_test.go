@@ -61,21 +61,8 @@ func TestMessage_TypeTags(t *testing.T) {
 		{"string", NewMessage("/", "5"), ",s", true},
 		{"[]byte", NewMessage("/", []byte{'6'}), ",b", true},
 		{"two_args", NewMessage("/", "123", int32(456)), ",si", true},
-		{"invalid_msg", nil, "", false},
-		{"invalid_arg", NewMessage("/foo/bar", 789), "", false},
 	} {
-		tags, err := tt.msg.TypeTags()
-		if err != nil && tt.ok {
-			t.Errorf("%s: TypeTags() unexpected error: %s", tt.desc, err)
-			continue
-		}
-		if err == nil && !tt.ok {
-			t.Errorf("%s: TypeTags() expected an error", tt.desc)
-			continue
-		}
-		if !tt.ok {
-			continue
-		}
+		tags := tt.msg.typeTags()
 		if got, want := tags, tt.tags; got != want {
 			t.Errorf("%s: TypeTags() = '%s', want = '%s'", tt.desc, got, want)
 		}
@@ -508,10 +495,7 @@ func TestTypeTagsString(t *testing.T) {
 	msg.Append(true)
 	msg.Append(false)
 
-	typeTags, err := msg.TypeTags()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	typeTags := msg.typeTags()
 
 	if typeTags != ",iTF" {
 		t.Errorf("Type tag string should be ',iTF' and is: %s", typeTags)
