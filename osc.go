@@ -111,7 +111,10 @@ type StandardDispatcher struct {
 
 // NewStandardDispatcher returns an StandardDispatcher.
 func NewStandardDispatcher() *StandardDispatcher {
-	return &StandardDispatcher{handlers: make(map[string]Handler)}
+	return &StandardDispatcher{
+		handlers:       make(map[string]Handler),
+		defaultHandler: nil,
+	}
 }
 
 // AddMsgHandler adds a new message handler for the given OSC address.
@@ -155,6 +158,7 @@ func (s *StandardDispatcher) Dispatch(packet Packet) {
 
 		go func() {
 			<-timer.C
+
 			for _, message := range p.Messages {
 				for address, handler := range s.handlers {
 					if message.Match(address) {
@@ -237,23 +241,22 @@ func (msg *Message) String() string {
 
 	var s strings.Builder
 	tags := msg.typeTags()
-
 	s.WriteString(fmt.Sprintf("%s %s", msg.Address, tags))
 
 	for _, arg := range msg.Arguments {
-		switch arg.(type) {
+		switch argType := arg.(type) {
 		case bool, int32, int64, float32, float64, string:
-			s.WriteString(fmt.Sprintf(" %v", arg))
+			s.WriteString(fmt.Sprintf(" %v", argType))
 
 		case nil:
 			s.WriteString(" Nil")
 
 		case []byte:
-			s.WriteString(fmt.Sprintf(" %s", arg))
+			s.WriteString(fmt.Sprintf(" %s", argType))
 
 		case Timetag:
-			timeTag := arg.(Timetag)
-			s.WriteString(fmt.Sprintf(" %d", timeTag.TimeTag()))
+
+			s.WriteString(fmt.Sprintf(" %d", argType.TimeTag()))
 		}
 	}
 
