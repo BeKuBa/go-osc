@@ -278,24 +278,28 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 	}
 
 	// Type tag string starts with ","
-	typetags := []byte{','}
+	lenArgs := len(msg.Arguments)
+	typetags := make([]byte, lenArgs+1)
+	typetags[0] = ','
 
 	// Process the type tags and collect all arguments
 	payload := new(bytes.Buffer)
-	for _, arg := range msg.Arguments {
+
+	for i, arg := range msg.Arguments {
 		switch t := arg.(type) {
 		case bool:
 			if t {
-				typetags = append(typetags, 'T')
+				typetags[i+1] = 'T'
 				continue
 			}
-			typetags = append(typetags, 'F')
+
+			typetags[i+1] = 'F'
 
 		case nil:
-			typetags = append(typetags, 'N')
+			typetags[i+1] = 'N'
 
 		case int32:
-			typetags = append(typetags, 'i')
+			typetags[i+1] = 'i'
 
 			err = binary.Write(payload, binary.BigEndian, t)
 			if err != nil {
@@ -303,7 +307,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case float32:
-			typetags = append(typetags, 'f')
+			typetags[i+1] = 'f'
 
 			err := binary.Write(payload, binary.BigEndian, t)
 			if err != nil {
@@ -311,7 +315,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case string:
-			typetags = append(typetags, 's')
+			typetags[i+1] = 's'
 
 			_, err = writePaddedString(t, payload)
 			if err != nil {
@@ -319,7 +323,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case []byte:
-			typetags = append(typetags, 'b')
+			typetags[i+1] = 'b'
 
 			_, err = writeBlob(t, payload)
 			if err != nil {
@@ -327,7 +331,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case int64:
-			typetags = append(typetags, 'h')
+			typetags[i+1] = 'h'
 
 			err = binary.Write(payload, binary.BigEndian, t)
 			if err != nil {
@@ -335,7 +339,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case float64:
-			typetags = append(typetags, 'd')
+			typetags[i+1] = 'd'
 
 			err = binary.Write(payload, binary.BigEndian, t)
 			if err != nil {
@@ -343,7 +347,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 			}
 
 		case Timetag:
-			typetags = append(typetags, 't')
+			typetags[i+1] = 't'
 
 			b, err := t.MarshalBinary()
 			if err != nil {
