@@ -535,12 +535,13 @@ func TestParsePacket(t *testing.T) {
 		},
 		{"empty", "", nil, false},
 	} {
-		pkt, err := ParsePacket(tt.msg)
+		var start int
+		pkt, err := readPacket(bufio.NewReader(bytes.NewBufferString(tt.msg)), &start, len(tt.msg))
 		if err != nil && tt.ok {
-			t.Errorf("%s: ParsePacket() returned unexpected error; %s", tt.desc, err)
+			t.Errorf("%s: readPacket() returned unexpected error; %s", tt.desc, err)
 		}
 		if err == nil && !tt.ok {
-			t.Errorf("%s: ParsePacket() expected error", tt.desc)
+			t.Errorf("%s: readPacket() expected error", tt.desc)
 		}
 		if !tt.ok {
 			continue
@@ -557,7 +558,7 @@ func TestParsePacket(t *testing.T) {
 			continue
 		}
 		if got, want := pktBytes, ttpktBytes; !reflect.DeepEqual(got, want) {
-			t.Errorf("%s: ParsePacket() as bytes = '%s', want = '%s'", tt.desc, got, want)
+			t.Errorf("%s: readPacket() as bytes = '%s', want = '%s'", tt.desc, got, want)
 			continue
 		}
 	}

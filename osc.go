@@ -417,7 +417,9 @@ func (b *Bundle) Append(pck Packet) error {
 func (b *Bundle) MarshalBinary() ([]byte, error) {
 	// Add the '#bundle' string
 	data := new(bytes.Buffer)
-	if _, err := writePaddedString("#bundle", data); err != nil {
+
+	_, err := writePaddedString("#bundle", data)
+	if err != nil {
 		return nil, err
 	}
 
@@ -553,33 +555,21 @@ func (s *Server) ListenAndServe() error {
 // Serve retrieves incoming OSC packets from the given connection and dispatches
 // retrieved OSC packets. If something goes wrong an error is returned.
 func (s *Server) Serve(c net.PacketConn) error {
-	var tempDelay time.Duration
+	tempDelay := 25 + time.Millisecond
+
 	for {
 		msg, err := s.readFromConnection(c)
 		if err != nil {
 			ne, ok := err.(net.Error)
 
 			if ok && ne.Temporary() {
-				if tempDelay == 0 {
-					tempDelay = 5 * time.Millisecond
-				} else {
-					tempDelay *= 2
-				}
-
-				max := 1 * time.Second
-				if tempDelay > max {
-					tempDelay = max
-				}
-
 				time.Sleep(tempDelay)
-
 				continue
 			}
 
 			return err
 		}
 
-		tempDelay = 0
 		go s.Dispatcher.Dispatch(msg)
 	}
 }
@@ -622,13 +612,6 @@ func (s *Server) readFromConnection(c net.PacketConn) (Packet, error) {
 	return p, err
 }
 
-// ParsePacket parses the given msg string and returns a Packet.
-func ParsePacket(msg string) (Packet, error) {
-	var start int
-	p, err := readPacket(bufio.NewReader(bytes.NewBufferString(msg)), &start, len(msg))
-	return p, err
-}
-
 // receivePacket receives an OSC packet from the given reader.
 func readPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
 	// var buf []byte
@@ -643,17 +626,21 @@ func readPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return packet, nil
 	}
+
 	if buf[0] == '#' { // An OSC bundle starts with a '#'
 		packet, err := readBundle(reader, start, end)
 		if err != nil {
 			return nil, err
 		}
+
 		return packet, nil
 	}
 
 	var p Packet
+
 	return p, nil
 }
 
@@ -693,6 +680,7 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		err = bundle.Append(p)
 		if err != nil {
 			return nil, err
@@ -747,10 +735,12 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 		switch c {
 		case 'i': // int32
 			var i int32
+
 			err = binary.Read(reader, binary.BigEndian, &i)
 			if err != nil {
 				return err
 			}
+
 			*start += 4
 			msg.Append(i)
 
@@ -804,10 +794,12 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 
 		case 't': // OSC time tag
 			var tt uint64
+
 			err = binary.Read(reader, binary.BigEndian, &tt)
 			if err != nil {
 				return nil
 			}
+
 			*start += 8
 			msg.Append(*NewTimetagFromTimetag(tt))
 
@@ -871,10 +863,8 @@ func (t *Timetag) TimeTag() uint64 {
 // MarshalBinary converts the OSC time tag to a byte array.
 func (t *Timetag) MarshalBinary() ([]byte, error) {
 	data := new(bytes.Buffer)
-	if err := binary.Write(data, binary.BigEndian, t.timeTag); err != nil {
-		return []byte{}, err
-	}
-	return data.Bytes(), nil
+	err := binary.Write(data, binary.BigEndian, t.timeTag)
+	return data.Bytes(), err
 }
 
 // SetTime sets the value of the OSC time tag.
