@@ -25,7 +25,7 @@ func main() {
 		fmt.Println("Start listening on", addr)
 
 		for {
-			packet, err := server.ReceivePacket(conn)
+			packet, err := server.Read(conn)
 			if err != nil {
 				fmt.Println("Server error: " + err.Error())
 				os.Exit(1)

@@ -217,7 +217,7 @@ func TestServerMessageReceiving(t *testing.T) {
 		// Start the client
 		start <- true
 
-		packet, err := server.ReceivePacket(c)
+		packet, err := server.Read(c)
 		if err != nil {
 			t.Errorf("server error: %v", err)
 			return
@@ -314,7 +314,7 @@ func TestReadTimeout(t *testing.T) {
 
 		// Start the client
 		start <- true
-		p, err := server.ReceivePacket(c)
+		p, err := server.Read(c)
 		if err != nil {
 			t.Errorf("server error: %v", err)
 			return
@@ -325,13 +325,13 @@ func TestReadTimeout(t *testing.T) {
 		}
 
 		// Second receive should time out since client is delayed 150 milliseconds
-		if _, err = server.ReceivePacket(c); err == nil {
+		if _, err = server.Read(c); err == nil {
 			t.Errorf("expected error")
 			return
 		}
 
 		// Next receive should get it
-		p, err = server.ReceivePacket(c)
+		p, err = server.Read(c)
 		if err != nil {
 			t.Errorf("server error: %v", err)
 			return

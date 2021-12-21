@@ -5,7 +5,6 @@ package osc
 import (
 	"bufio"
 	"bytes"
-	"encoding"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -22,7 +21,7 @@ const (
 
 // Packet is the interface for Message and Bundle.
 type Packet interface {
-	encoding.BinaryMarshaler
+	MarshalBinary() (data []byte, err error)
 }
 
 // Message represents a single OSC message. An OSC message consists of an OSC
@@ -558,7 +557,7 @@ func (s *Server) Serve(c net.PacketConn) error {
 	tempDelay := 25 + time.Millisecond
 
 	for {
-		msg, err := s.readFromConnection(c)
+		msg, err := s.Read(c)
 		if err != nil {
 			ne, ok := err.(net.Error)
 
@@ -586,15 +585,11 @@ func (s *Server) Close() error {
 	return s.close()
 }
 
-// ReceivePacket listens for incoming OSC packets and returns the packet if one is received.
-func (s *Server) ReceivePacket(c net.PacketConn) (Packet, error) {
-	return s.readFromConnection(c)
-}
-
-// readFromConnection retrieves OSC packets.
-func (s *Server) readFromConnection(c net.PacketConn) (Packet, error) {
+// Read retrieves OSC packets.
+func (s *Server) Read(c net.PacketConn) (Packet, error) {
 	if s.ReadTimeout != 0 {
-		if err := c.SetReadDeadline(time.Now().Add(s.ReadTimeout)); err != nil {
+		err := c.SetReadDeadline(time.Now().Add(s.ReadTimeout))
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -620,28 +615,15 @@ func readPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
 		return nil, err
 	}
 
-	// An OSC Message starts with a '/'
-	if buf[0] == '/' {
-		packet, err := readMessage(reader, start)
-		if err != nil {
-			return nil, err
-		}
+	switch buf[0] {
+	case '/':
+		return readMessage(reader, start)
 
-		return packet, nil
+	case '#':
+		return readBundle(reader, start, end)
 	}
 
-	if buf[0] == '#' { // An OSC bundle starts with a '#'
-		packet, err := readBundle(reader, start, end)
-		if err != nil {
-			return nil, err
-		}
-
-		return packet, nil
-	}
-
-	var p Packet
-
-	return p, nil
+	return nil, ERROR_INVALID_PACKET
 }
 
 // readBundle reads an Bundle from reader.
@@ -659,9 +641,11 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 
 	// Read the timetag
 	var timeTag uint64
-	if err := binary.Read(reader, binary.BigEndian, &timeTag); err != nil {
+	err = binary.Read(reader, binary.BigEndian, &timeTag)
+	if err != nil {
 		return nil, err
 	}
+
 	*start += 8
 
 	// Create a new bundle
@@ -671,9 +655,12 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 	for *start < end {
 		// Read the size of the bundle element
 		var length int32
-		if err := binary.Read(reader, binary.BigEndian, &length); err != nil {
+
+		err = binary.Read(reader, binary.BigEndian, &length)
+		if err != nil {
 			return nil, err
 		}
+
 		*start += 4
 
 		p, err := readPacket(reader, start, end)
@@ -701,6 +688,7 @@ func readMessage(reader *bufio.Reader, start *int) (*Message, error) {
 
 	// Read all arguments
 	msg := NewMessage(addr)
+
 	err = readArguments(msg, reader, start)
 	if err != nil {
 		return nil, err
@@ -882,7 +870,7 @@ func (t *Timetag) ExpiresIn() time.Duration {
 	}
 
 	tt := timetagToTime(t.timeTag)
-	seconds := tt.Sub(time.Now())
+	seconds := time.Until(tt)
 
 	if seconds <= 0 {
 		return 0
