@@ -16,3 +16,7 @@
 
 # Ignore coverage reports
 coverage.out
+
+# Ignore .DS_Store
+.DS_Store
+
