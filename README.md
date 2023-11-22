@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/crgimenes/go-osc)](https://goreportcard.com/report/github.com/crgimenes/go-osc)
 
-[Open Sound Control (OSC)](http://opensoundcontrol.org/introduction-osc) library for Golang. Implemented in pure Go.
+[Open Sound Control (OSC)](https://opensoundcontrol.stanford.edu) library for Golang. Implemented in pure Go.
 
 ---
 
