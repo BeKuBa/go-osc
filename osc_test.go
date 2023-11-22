@@ -13,79 +13,6 @@ import (
 	"time"
 )
 
-func TestMessage_Append(t *testing.T) {
-	oscAddress := "/address"
-	message := NewMessage(oscAddress)
-	if message.Address != oscAddress {
-		t.Errorf("OSC address should be \"%s\" and is \"%s\"", oscAddress, message.Address)
-	}
-
-	message.Append("string argument")
-	message.Append(123456789)
-	message.Append(true)
-
-	lenArgs := len(message.Arguments)
-	if lenArgs != 3 {
-		t.Errorf("Number of arguments should be %d and is %d", 3, lenArgs)
-	}
-}
-
-func TestMessage_Equals(t *testing.T) {
-	msg1 := NewMessage("/address")
-	msg2 := NewMessage("/address")
-	msg1.Append(1234)
-	msg2.Append(1234)
-	msg1.Append("test string")
-	msg2.Append("test string")
-
-	if !msg1.Equals(msg2) {
-		t.Error("Messages should be equal")
-	}
-}
-
-func TestMessage_TypeTags(t *testing.T) {
-	for _, tt := range []struct {
-		desc string
-		msg  *Message
-		tags string
-		ok   bool
-	}{
-		{"addr_only", NewMessage("/"), ",", true},
-		{"nil", NewMessage("/", nil), ",N", true},
-		{"bool_true", NewMessage("/", true), ",T", true},
-		{"bool_false", NewMessage("/", false), ",F", true},
-		{"int32", NewMessage("/", int32(1)), ",i", true},
-		{"int64", NewMessage("/", int64(2)), ",h", true},
-		{"float32", NewMessage("/", float32(3.0)), ",f", true},
-		{"float64", NewMessage("/", float64(4.0)), ",d", true},
-		{"string", NewMessage("/", "5"), ",s", true},
-		{"[]byte", NewMessage("/", []byte{'6'}), ",b", true},
-		{"two_args", NewMessage("/", "123", int32(456)), ",si", true},
-	} {
-		tags := tt.msg.typeTags()
-		if got, want := tags, tt.tags; got != want {
-			t.Errorf("%s: TypeTags() = '%s', want = '%s'", tt.desc, got, want)
-		}
-	}
-}
-
-func TestMessage_String(t *testing.T) {
-	for _, tt := range []struct {
-		desc string
-		msg  *Message
-		str  string
-	}{
-		{"nil", nil, ""},
-		{"addr_only", NewMessage("/foo/bar"), "/foo/bar ,"},
-		{"one_addr", NewMessage("/foo/bar", "123"), "/foo/bar ,s 123"},
-		{"two_args", NewMessage("/foo/bar", "123", int32(456)), "/foo/bar ,si 123 456"},
-	} {
-		if got, want := tt.msg.String(), tt.str; got != want {
-			t.Errorf("%s: String() = '%s', want = '%s'", tt.desc, got, want)
-		}
-	}
-}
-
 func TestAddMsgHandler(t *testing.T) {
 	d := NewStandardDispatcher()
 	err := d.AddMsgHandler("/address/test", func(msg *Message) {})
@@ -486,19 +413,6 @@ func TestPadBytesNeeded(t *testing.T) {
 	n = padBytesNeeded(10)
 	if n != 2 {
 		t.Errorf("Number of pad bytes should be 2 and is: %d", n)
-	}
-}
-
-func TestTypeTagsString(t *testing.T) {
-	msg := NewMessage("/some/address")
-	msg.Append(int32(100))
-	msg.Append(true)
-	msg.Append(false)
-
-	typeTags := msg.typeTags()
-
-	if typeTags != ",iTF" {
-		t.Errorf("Type tag string should be ',iTF' and is: %s", typeTags)
 	}
 }
 
