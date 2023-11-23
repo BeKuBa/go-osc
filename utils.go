@@ -1,36 +1,9 @@
-// Package osc provides a package for sending and receiving OpenSoundControl
-// messages. The package is implemented in pure Go.
 package osc
 
 import (
 	"regexp"
 	"strings"
 )
-
-const (
-	secondsFrom1900To1970 = 2208988800
-	bundleTagString       = "#bundle"
-)
-
-// Handler is an interface for message handlers. Every handler implementation
-// for an OSC message must implement this interface.
-type Handler interface {
-	HandleMessage(msg *Message)
-}
-
-// HandlerFunc implements the Handler interface. Type definition for an OSC
-// handler function.
-type HandlerFunc func(msg *Message)
-
-// HandleMessage calls itself with the given OSC Message. Implements the
-// Handler interface.
-func (f HandlerFunc) HandleMessage(msg *Message) {
-	f(msg)
-}
-
-////
-// Utility and helper functions
-////
 
 // addressExists returns true if the OSC address `addr` is found in `handlers`.
 func addressExists(addr string, handlers map[string]Handler) bool {

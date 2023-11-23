@@ -6,6 +6,10 @@ import (
 	"fmt"
 )
 
+const (
+	bundleTagString = "#bundle"
+)
+
 // Packet is the interface for Message and Bundle.
 type Packet interface {
 	MarshalBinary() (data []byte, err error)

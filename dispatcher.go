@@ -12,6 +12,22 @@ type Dispatcher interface {
 	Dispatch(packet Packet)
 }
 
+// Handler is an interface for message handlers. Every handler implementation
+// for an OSC message must implement this interface.
+type Handler interface {
+	HandleMessage(msg *Message)
+}
+
+// HandlerFunc implements the Handler interface. Type definition for an OSC
+// handler function.
+type HandlerFunc func(msg *Message)
+
+// HandleMessage calls itself with the given OSC Message. Implements the
+// Handler interface.
+func (f HandlerFunc) HandleMessage(msg *Message) {
+	f(msg)
+}
+
 // StandardDispatcher is a dispatcher for OSC packets. It handles the dispatching of
 // received OSC packets to Handlers for their given address.
 type StandardDispatcher struct {

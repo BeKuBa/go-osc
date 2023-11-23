@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	secondsFrom1900To1970 = 2208988800
+)
+
 // Timetag represents an OSC Time Tag.
 // An OSC Time Tag is defined as follows:
 // Time tags are represented by a 64 bit fixed point number. The first 32 bits
