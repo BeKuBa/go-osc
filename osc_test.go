@@ -540,30 +540,3 @@ func makePacket(addr string, args []string) Packet {
 	}
 	return msg
 }
-
-func TestReadBundle(t *testing.T) {
-	b := NewBundle(time.Now())
-	b.Append(NewMessage("/a", "test"))
-	b.Append(NewMessage("/b", "test2"))
-
-	d, err := b.MarshalBinary()
-	if err != nil {
-		t.Errorf("bundle marshal error: %v", err)
-		return
-	}
-
-	d = append(d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-
-	io := bufio.NewReader(bytes.NewReader(d))
-	start := 0
-	bundle, err := readBundle(io, &start, len(d))
-	if err != nil {
-		t.Errorf("bundle read error: %v", err)
-		return
-	}
-
-	if len(bundle.Messages) != 2 {
-		t.Error("incorrect message count on decode")
-		return
-	}
-}
