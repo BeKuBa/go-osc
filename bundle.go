@@ -110,7 +110,7 @@ func (b *Bundle) MarshalBinary() ([]byte, error) {
 // Bundle.
 func NewBundle(time time.Time) *Bundle {
 	return &Bundle{
-		Timetag:  *NewTimetag(time),
+		Timetag:  NewTimetagFromTime(time),
 		Messages: []*Message{},
 		Bundles:  []*Bundle{},
 	}

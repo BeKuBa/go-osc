@@ -57,7 +57,7 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 	*start += 8
 
 	// Create a new bundle
-	bundle := NewBundle(timetagToTime(timeTag))
+	bundle := NewBundle(timetagToTime(Timetag(timeTag)))
 
 	// Read until the end of the buffer
 	for *start < end {
@@ -197,7 +197,7 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 			}
 
 			*start += 8
-			msg.Append(*NewTimetagFromTimetag(tt))
+			msg.Append(Timetag(tt))
 
 		case 'N': // nil
 			msg.Append(nil)

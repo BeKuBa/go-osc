@@ -86,7 +86,7 @@ func (msg *Message) String() string {
 
 		case Timetag:
 
-			s.WriteString(fmt.Sprintf(" %d", argType.TimeTag()))
+			s.WriteString(fmt.Sprintf(" %d", Timetag(argType)))
 		}
 	}
 
