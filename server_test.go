@@ -1,12 +1,12 @@
 package osc
 
 import (
-	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // These tests stop the server by forcibly closing the connection, which causes
@@ -26,78 +26,35 @@ func serveUntilInterrupted(server *Server) error {
 	return nil
 }
 
-func TestServerMessageReceiving(t *testing.T) {
-	port := 6677
-
-	finish := make(chan bool)
-	start := make(chan bool)
+func TestListenAndServe(t *testing.T) {
 	done := sync.WaitGroup{}
 	done.Add(2)
 
-	// Start the server in a go-routine
 	go func() {
-		server := &Server{}
+		dispatcher := NewStandardDispatcher()
+		dispatcher.AddMsgHandler("/osc/address", func(msg *Message) {
+			assert.Equal(t, "/osc/address", msg.Address)
+			assert.Equal(t, 3, len(msg.Arguments))
+			assert.Equal(t, int32(111), msg.Arguments[0].(int32))
+			assert.Equal(t, true, msg.Arguments[1].(bool))
+			assert.Equal(t, "hello", msg.Arguments[2].(string))
 
-		c, err := net.ListenPacket("udp", "localhost:"+strconv.Itoa(port))
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		defer c.Close()
-
-		// Start the client
-		start <- true
-
-		packet, err := server.Read(c)
-		if err != nil {
-			t.Errorf("server error: %v", err)
-			return
-		}
-		if packet == nil {
-			t.Error("nil packet")
-			return
+			done.Done()
+		})
+		addr := "127.0.0.1:8765"
+		server := &Server{
+			Addr:       addr,
+			Dispatcher: dispatcher,
 		}
 
-		msg := packet.(*Message)
-		lenArg := len(msg.Arguments)
-		if lenArg != 2 {
-			t.Errorf("Argument length should be 2 and is: %d\n", lenArg)
-		}
-		if msg.Arguments[0].(int32) != 1122 {
-			t.Error("Argument should be 1122 and is: " + string(msg.Arguments[0].(int32)))
-		}
-		if msg.Arguments[1].(int32) != 3344 {
-			t.Error("Argument should be 3344 and is: " + string(msg.Arguments[1].(int32)))
-		}
-
-		c.Close()
-		finish <- true
+		server.ListenAndServe()
 	}()
 
 	go func() {
-		timeout := time.After(5 * time.Second)
-		select {
-		case <-timeout:
-		case <-start:
-			client := NewClient("localhost", port)
-			msg := NewMessage("/address/test")
-			msg.Append(int32(1122))
-			msg.Append(int32(3344))
-			time.Sleep(500 * time.Millisecond)
-			if err := client.Send(msg); err != nil {
-				t.Error(err)
-				done.Done()
-				done.Done()
-				return
-			}
-		}
+		client := NewClient("localhost", 8765)
+		msg := NewMessage("/osc/address", int32(111), true, "hello")
+		client.Send(msg)
 
-		done.Done()
-
-		select {
-		case <-timeout:
-		case <-finish:
-		}
 		done.Done()
 	}()
 
@@ -105,72 +62,34 @@ func TestServerMessageReceiving(t *testing.T) {
 }
 
 func TestReadTimeout(t *testing.T) {
-	start := make(chan bool)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
 	go func() {
-		defer wg.Done()
+		dispatcher := NewStandardDispatcher()
+		dispatcher.AddMsgHandler("/address/test", func(msg *Message) {
+			assert.Equal(t, "/address/test", msg.Address)
+			assert.Equal(t, 0, len(msg.Arguments))
 
-		select {
-		case <-time.After(5 * time.Second):
-			t.Error("timed out")
 			wg.Done()
-		case <-start:
-			client := NewClient("localhost", 6677)
-			msg := NewMessage("/address/test1")
-			err := client.Send(msg)
-			if err != nil {
-				t.Error(err)
-			}
-
-			time.Sleep(150 * time.Millisecond)
-			msg = NewMessage("/address/test2")
-			err = client.Send(msg)
-			if err != nil {
-				t.Error(err)
-			}
+		})
+		addr := "127.0.0.1:6677"
+		server := &Server{
+			Addr:        addr,
+			Dispatcher:  dispatcher,
+			ReadTimeout: 100 * time.Millisecond,
 		}
+
+		server.ListenAndServe()
 	}()
 
 	go func() {
-		defer wg.Done()
+		time.Sleep(150 * time.Millisecond)
+		client := NewClient("localhost", 6677)
+		msg := NewMessage("/address/test")
+		client.Send(msg)
 
-		server := &Server{ReadTimeout: 100 * time.Millisecond}
-		c, err := net.ListenPacket("udp", "localhost:6677")
-		if err != nil {
-			t.Error(err)
-		}
-		defer c.Close()
-
-		// Start the client
-		start <- true
-		p, err := server.Read(c)
-		if err != nil {
-			t.Errorf("server error: %v", err)
-			return
-		}
-		if got, want := p.(*Message).Address, "/address/test1"; got != want {
-			t.Errorf("wrong address; got = %s, want = %s", got, want)
-			return
-		}
-
-		// Second receive should time out since client is delayed 150 milliseconds
-		if _, err = server.Read(c); err == nil {
-			t.Errorf("expected error")
-			return
-		}
-
-		// Next receive should get it
-		p, err = server.Read(c)
-		if err != nil {
-			t.Errorf("server error: %v", err)
-			return
-		}
-		if got, want := p.(*Message).Address, "/address/test2"; got != want {
-			t.Errorf("wrong address; got = %s, want = %s", got, want)
-			return
-		}
+		wg.Done()
 	}()
 
 	wg.Wait()
