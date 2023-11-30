@@ -32,12 +32,12 @@ func (s *Server) ListenAndServe() error {
 
 	s.close = ln.Close
 
-	return s.Serve(ln)
+	return s.serve(ln)
 }
 
 // Serve retrieves incoming OSC packets from the given connection and dispatches
 // retrieved OSC packets. If something goes wrong an error is returned.
-func (s *Server) Serve(c net.PacketConn) error {
+func (s *Server) serve(c net.PacketConn) error {
 	tempDelay := 25 + time.Millisecond
 
 	for {
