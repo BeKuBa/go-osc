@@ -2,6 +2,7 @@ package osc
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"time"
 )
@@ -9,23 +10,23 @@ import (
 // Dispatcher is an interface for an OSC message dispatcher. A dispatcher is
 // responsible for dispatching received OSC messages.
 type Dispatcher interface {
-	Dispatch(packet Packet)
+	Dispatch(packet Packet, addr net.Addr)
 }
 
 // Handler is an interface for message handlers. Every handler implementation
 // for an OSC message must implement this interface.
 type Handler interface {
-	HandleMessage(msg *Message)
+	HandleMessage(msg *Message, addr net.Addr)
 }
 
 // HandlerFunc implements the Handler interface. Type definition for an OSC
 // handler function.
-type HandlerFunc func(msg *Message)
+type HandlerFunc func(msg *Message, addr net.Addr)
 
 // HandleMessage calls itself with the given OSC Message. Implements the
 // Handler interface.
-func (f HandlerFunc) HandleMessage(msg *Message) {
-	f(msg)
+func (f HandlerFunc) HandleMessage(msg *Message, addr net.Addr) {
+	f(msg, addr)
 }
 
 // StandardDispatcher is a dispatcher for OSC packets. It handles the dispatching of
@@ -66,17 +67,17 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
-func (s *StandardDispatcher) Dispatch(packet Packet) {
+func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) {
 	switch p := packet.(type) {
 	case *Message:
-		for addr, handler := range s.handlers {
-			if p.Match(addr) {
-				handler.HandleMessage(p)
+		for path, handler := range s.handlers {
+			if p.Match(path) {
+				handler.HandleMessage(p, raddr)
 			}
 		}
 
 		if s.defaultHandler != nil {
-			s.defaultHandler.HandleMessage(p)
+			s.defaultHandler.HandleMessage(p, raddr)
 		}
 
 	case *Bundle:
@@ -86,20 +87,20 @@ func (s *StandardDispatcher) Dispatch(packet Packet) {
 			<-timer.C
 
 			for _, message := range p.Messages {
-				for address, handler := range s.handlers {
-					if message.Match(address) {
-						handler.HandleMessage(message)
+				for path, handler := range s.handlers {
+					if message.Match(path) {
+						handler.HandleMessage(message, raddr)
 					}
 				}
 
 				if s.defaultHandler != nil {
-					s.defaultHandler.HandleMessage(message)
+					s.defaultHandler.HandleMessage(message, raddr)
 				}
 			}
 
 			// Process all bundles
 			for _, b := range p.Bundles {
-				s.Dispatch(b)
+				s.Dispatch(b, raddr)
 			}
 		}()
 	}

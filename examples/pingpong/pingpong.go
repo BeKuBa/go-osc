@@ -9,7 +9,7 @@ import (
 
 func main() {
 	done := sync.WaitGroup{}
-	done.Add(1)
+	done.Add(2)
 
 	addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
 	if err != nil {
@@ -17,6 +17,11 @@ func main() {
 	}
 
 	addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	addr3, err := net.ResolveUDPAddr("udp", "127.0.0.1:9001")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -34,8 +39,8 @@ func main() {
 		}
 	}()
 
-	err = d1.AddMsgHandler("*", func(msg *osc.Message) {
-		fmt.Printf("d1 %v  \n", msg)
+	err = d1.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+		fmt.Printf("%v -> %v: %v \n", addr, addr2, msg)
 		err = app1.SendMsg("/pong", 2)
 		if err != nil {
 			fmt.Println(err)
@@ -53,8 +58,8 @@ func main() {
 	}()
 
 	d2 := osc.NewStandardDispatcher()
-	err = d2.AddMsgHandler("*", func(msg *osc.Message) {
-		fmt.Printf("d2 %v \n", msg)
+	err = d2.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+		fmt.Printf("%v -> %v: %v \n", addr, addr1, msg)
 		done.Done()
 	})
 	if err != nil {
@@ -79,10 +84,47 @@ func main() {
 		}
 	}()
 
+	d3 := osc.NewStandardDispatcher()
+	err = d3.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+		fmt.Printf("d3 %v \n", msg)
+		done.Done()
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	app3 := osc.NewServerAndClient(d3)
+	err = app3.NewConn(addr3, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer func() {
+		err := app3.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	go func() {
+		err := app3.ListenAndServe()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+
 	err = app2.SendMsg("/ping", 1.0)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = app3.SendMsgTo(addr1, "/pong", 3)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	done.Wait()
 }
+
+// output:
+//127.0.0.1:9001 d2 /pong ,i 3
+//127.0.0.1:8000 d1 /ping ,d 1
+//127.0.0.1:9000 d2 /pong ,i 2

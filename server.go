@@ -41,7 +41,7 @@ func (s *Server) serve(c net.PacketConn) error {
 	tempDelay := 25 + time.Millisecond
 
 	for {
-		msg, err := s.Read(c)
+		msg, raddr, err := s.Read(c)
 		if err != nil {
 			ne, ok := err.(net.Error)
 
@@ -53,7 +53,7 @@ func (s *Server) serve(c net.PacketConn) error {
 			return err
 		}
 
-		go s.Dispatcher.Dispatch(msg)
+		go s.Dispatcher.Dispatch(msg, raddr)
 	}
 }
 
@@ -70,23 +70,23 @@ func (s *Server) Close() error {
 }
 
 // Read retrieves OSC packets.
-func (s *Server) Read(c net.PacketConn) (Packet, error) {
+func (s *Server) Read(c net.PacketConn) (Packet, net.Addr, error) {
 	if s.ReadTimeout != 0 {
 		err := c.SetReadDeadline(time.Now().Add(s.ReadTimeout))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	data := make([]byte, 65535)
 
-	n, _, err := c.ReadFrom(data)
+	n, addr, err := c.ReadFrom(data)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var start int
 	p, err := readPacket(bufio.NewReader(bytes.NewBuffer(data)), &start, n)
 
-	return p, err
+	return p, addr, err
 }

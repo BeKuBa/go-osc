@@ -8,6 +8,7 @@ import (
 
 type ServerAndClient struct {
 	conn   *net.UDPConn
+	RAddr  *net.UDPAddr // default remote adr (for Send and SendMsg)
 	server *Server
 }
 
@@ -17,24 +18,25 @@ func NewServerAndClient(dispatcher Dispatcher) *ServerAndClient {
 
 // New UDP Connection for Server and Client
 func (sc *ServerAndClient) NewConn(laddr *net.UDPAddr, raddr *net.UDPAddr) error {
-	conn, err := net.DialUDP("udp", laddr, raddr)
+	conn, err := net.ListenUDP("udp", laddr)
 	if err != nil {
 		return err
 	}
 
 	sc.conn = conn
-	sc.server.Addr = laddr.String()
+	sc.RAddr = raddr
+
 	return err
 }
 
 // Send sends an OSC Bundle or an OSC Message (as OSC Client).
-func (sc *ServerAndClient) Send(packet Packet) (err error) {
+func (sc *ServerAndClient) SendTo(raddr net.Addr, packet Packet) (err error) {
 	if sc.conn != nil {
 		data, err := packet.MarshalBinary()
 		if err != nil {
 			return err
 		}
-		if _, err = sc.conn.Write(data); err != nil {
+		if _, err = sc.conn.WriteTo(data, raddr); err != nil {
 			return err
 		}
 	} else {
@@ -43,8 +45,12 @@ func (sc *ServerAndClient) Send(packet Packet) (err error) {
 	return err
 }
 
+func (sc *ServerAndClient) Send(packet Packet) error {
+	return sc.SendTo(sc.RAddr, packet)
+}
+
 // SendMsg sends a OSC Message (all int types konverted to int32)
-func (sc *ServerAndClient) SendMsg(adr string, args ...any) error {
+func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) error {
 	var a []any
 
 	for _, arg := range args {
@@ -66,7 +72,11 @@ func (sc *ServerAndClient) SendMsg(adr string, args ...any) error {
 
 	}
 
-	return sc.Send(NewMessage(adr, a...))
+	return sc.SendTo(addr, NewMessage(path, a...))
+}
+
+func (sc *ServerAndClient) SendMsg(path string, args ...any) error {
+	return sc.SendMsgTo(sc.RAddr, path, args...)
 }
 
 // ListenAndServe listen and serve as an OSC Server

@@ -22,7 +22,7 @@ func TestServerAndClient(t *testing.T) {
 	go func() {
 
 		wait := sync.WaitGroup{}
-		wait.Add(1)
+		wait.Add(3)
 
 		var d float64 = 0.0
 		var i int32 = 0
@@ -39,7 +39,7 @@ func TestServerAndClient(t *testing.T) {
 
 		d1 := osc.NewStandardDispatcher()
 		app1 := osc.NewServerAndClient(d1)
-		err = app1.NewConn(addr2, addr1)
+		err = app1.NewConn(addr1, addr2)
 		if err != nil {
 			t.Error(err)
 		}
@@ -50,8 +50,9 @@ func TestServerAndClient(t *testing.T) {
 			}
 		}()
 
-		err = d1.AddMsgHandler(ping, func(msg *osc.Message) {
+		err = d1.AddMsgHandler(ping, func(msg *osc.Message, addr net.Addr) {
 			d = msg.Arguments[0].(float64)
+			assert.Equal(t, 1.0, d)
 			err = app1.SendMsg(pong, 2)
 			if err != nil {
 				t.Error(err)
@@ -69,8 +70,9 @@ func TestServerAndClient(t *testing.T) {
 		}()
 
 		d2 := osc.NewStandardDispatcher()
-		err = d2.AddMsgHandler(pong, func(msg *osc.Message) {
+		err = d2.AddMsgHandler(pong, func(msg *osc.Message, addr net.Addr) {
 			i = msg.Arguments[0].(int32)
+			assert.Equal(t, int32(2), i)
 			wait.Done()
 		})
 		if err != nil {
@@ -78,7 +80,7 @@ func TestServerAndClient(t *testing.T) {
 		}
 
 		app2 := osc.NewServerAndClient(d2)
-		err = app2.NewConn(addr1, addr2)
+		err = app2.NewConn(addr2, addr1)
 		if err != nil {
 			t.Error(err)
 		}
@@ -100,11 +102,19 @@ func TestServerAndClient(t *testing.T) {
 			t.Error(err)
 		}
 
-		wait.Wait()
+		err = app1.SendMsg(pong, 2)
+		if err != nil {
+			t.Error(err)
+		}
 
-		// check if send and receive are the same
-		assert.Equal(t, 1.0, d)
-		assert.Equal(t, int32(2), i)
+		app3 := osc.NewServerAndClient(nil)
+		err = app3.NewConn(nil, nil)
+		err = app3.SendMsgTo(addr2, pong, 2)
+		if err != nil {
+			t.Error(err)
+		}
+
+		wait.Wait()
 
 		done <- true
 	}()

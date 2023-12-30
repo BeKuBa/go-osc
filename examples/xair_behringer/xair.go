@@ -26,8 +26,8 @@ func main() {
 	}
 
 	d := osc.NewStandardDispatcher()
-	err = d.AddMsgHandler("*", func(msg *osc.Message) {
-		fmt.Printf("xr: %v  \n", msg)
+	err = d.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+		fmt.Printf("xr %v: %v  \n", addr, msg)
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -64,10 +64,10 @@ func main() {
 	}
 
 	// Output:
-	// xr: /xinfo ,ssss 10.0.1.174 XR18-35-54-8A XR18 1.18
-	// xr: /status ,sss active 10.0.1.174 XR18-35-54-8A
-	// xr: /status ,sss active 10.0.1.174 XR18-35-54-8A
-	// xr: /status ,sss active 10.0.1.174 XR18-35-54-8A
+	//	xr 10.0.1.174:10024: /xinfo ,ssss 10.0.1.174 XR18-35-54-8A XR18 1.18
+	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A
+	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A
+	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A
 	// ...
 
 }
