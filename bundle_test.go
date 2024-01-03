@@ -12,8 +12,10 @@ import (
 func TestBundle(t *testing.T) {
 	bundle := NewBundle(time.Now())
 
-	bundle.Append(NewMessage("/a", "test"))
-	bundle.Append(NewMessage("/b", "test2"))
+	err := bundle.Append(NewMessage("/a", "test"))
+	assert.Nil(t, err)
+	err = bundle.Append(NewMessage("/b", "test2"))
+	assert.Nil(t, err)
 
 	d, err := bundle.MarshalBinary()
 	assert.Nil(t, err)
