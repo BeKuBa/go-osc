@@ -60,13 +60,17 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 	bundle := NewBundle(timetagToTime(Timetag(timeTag)))
 
 	// Read until the end of the buffer
-	for *start < end {
+	//
+	for (end - *start) > 4 {
 		// Read the size of the bundle element
 		var length int32
 
 		err = binary.Read(reader, binary.BigEndian, &length)
 		if err != nil {
 			return nil, err
+		}
+		if length == 0 {
+			break
 		}
 
 		*start += 4
