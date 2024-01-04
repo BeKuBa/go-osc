@@ -20,7 +20,7 @@ func TestBundle(t *testing.T) {
 	d, err := bundle.MarshalBinary()
 	assert.Nil(t, err)
 
-	t.Run("bundle as it is", func(t *testing.T) {
+	t.Run("should read bundle without padding", func(t *testing.T) {
 		io := bufio.NewReader(bytes.NewReader(d))
 		start := 0
 		b, err := readBundle(io, &start, len(d))
@@ -29,7 +29,7 @@ func TestBundle(t *testing.T) {
 		assert.Equal(t, 2, len(b.Messages))
 	})
 
-	t.Run("should append data(4 nulls) to bundle", func(t *testing.T) {
+	t.Run("should read bundle with 4 bytes padded", func(t *testing.T) {
 
 		d1 := append(d, 0, 0, 0, 0)
 
@@ -41,7 +41,7 @@ func TestBundle(t *testing.T) {
 		assert.Equal(t, 2, len(b.Messages))
 	})
 
-	t.Run("should append data(18 nulls) to bundle", func(t *testing.T) {
+	t.Run("should read bundle with 18 bytes padded", func(t *testing.T) {
 
 		d1 := append(d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
@@ -53,7 +53,7 @@ func TestBundle(t *testing.T) {
 		assert.Equal(t, 2, len(b.Messages))
 	})
 
-	t.Run("append data(0,0,0,1) to bundle(error expected)", func(t *testing.T) {
+	t.Run("should fail read bundle when padding is not well formatted", func(t *testing.T) {
 
 		d1 := append(d, 0, 0, 0, 1)
 
