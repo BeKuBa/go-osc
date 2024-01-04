@@ -28,7 +28,7 @@ This repository is a heavily modified fork of the [original go-osc](https://gith
   - 'T' (True)
   - 'F' (False)
   - 'N' (Nil)
-- Support for OSC address pattern including '\*', '?', '{,}' and '[]' wildcards
+- ~~Support for OSC address pattern including '\*', '?', '{,}' and '[]' wildcards~~
 
 ## Install
 
@@ -58,13 +58,18 @@ func main() {
 ```go
 package main
 
-import "github.com/crgimenes/go-osc"
+import (
+  "fmt"
+  "net"
+
+  "github.com/crgimenes/go-osc"
+)
 
 func main() {
     addr := "127.0.0.1:8765"
     d := osc.NewStandardDispatcher()
-    d.AddMsgHandler("/message/address", func(msg *osc.Message) {
-        fmt.Println(msg)
+    d.AddMsgHandler("/message/address", func(msg *osc.Message, addr net.Addr) {
+    fmt.Printf("Received message from %v: %v", addr, msg)
     })
 
     server := &osc.Server{
