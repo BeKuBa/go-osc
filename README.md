@@ -28,8 +28,7 @@ This repository is a heavily modified fork of the [original go-osc](https://gith
   - 'T' (True)
   - 'F' (False)
   - 'N' (Nil)
-- Support for OSC address pattern including '\*', '?', '{,}' and '[]' wildcards
-
+  - 
 ## Install
 
 ```shell
