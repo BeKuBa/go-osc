@@ -9,7 +9,7 @@ import (
 // Dispatcher is an interface for an OSC message dispatcher. A dispatcher is
 // responsible for dispatching received OSC messages.
 type Dispatcher interface {
-	Dispatch(packet Packet)
+	Dispatch(packet Packet) error
 }
 
 // Handler is an interface for message handlers. Every handler implementation
@@ -66,11 +66,16 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
-func (s *StandardDispatcher) Dispatch(packet Packet) {
+func (s *StandardDispatcher) Dispatch(packet Packet) (err error) {
 	switch p := packet.(type) {
 	case *Message:
+		regex, err := getRegEx(p.Address)
+		if err != nil {
+			return err
+		}
+
 		for addr, handler := range s.handlers {
-			if p.Match(addr) {
+			if regex.MatchString(addr) {
 				handler.HandleMessage(p)
 			}
 		}
@@ -82,12 +87,18 @@ func (s *StandardDispatcher) Dispatch(packet Packet) {
 	case *Bundle:
 		timer := time.NewTimer(p.Timetag.ExpiresIn())
 
+		errChan := make(chan error)
 		go func() {
 			<-timer.C
 
 			for _, message := range p.Messages {
+				regex, err := getRegEx(message.Address)
+				if err != nil {
+					errChan <- err
+					return
+				}
 				for address, handler := range s.handlers {
-					if message.Match(address) {
+					if regex.MatchString(address) {
 						handler.HandleMessage(message)
 					}
 				}
@@ -99,8 +110,17 @@ func (s *StandardDispatcher) Dispatch(packet Packet) {
 
 			// Process all bundles
 			for _, b := range p.Bundles {
-				s.Dispatch(b)
+				err := s.Dispatch(b)
+				if err != nil {
+					errChan <- err
+					return
+				}
 			}
+			errChan <- nil
 		}()
+		if err := <-errChan; err != nil {
+			return err
+		}
 	}
+	return nil
 }
