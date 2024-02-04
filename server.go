@@ -52,8 +52,13 @@ func (s *Server) serve(c net.PacketConn) error {
 
 			return err
 		}
-
-		go s.Dispatcher.Dispatch(msg)
+		errChan := make(chan error)
+		go func() {
+			errChan <- s.Dispatcher.Dispatch(msg)
+		}()
+		if err := <-errChan; err != nil {
+			return err
+		}
 	}
 }
 

@@ -43,30 +43,37 @@ func (sc *ServerAndClient) Send(packet Packet) (err error) {
 	return err
 }
 
-// SendMsg sends a OSC Message (all int types konverted to int32)
+// SendMsg sends a OSC Message (all int types converted to int32)
+// Default int is int32, include int values in range of int32
+// If you need a int value in range of int64 convert the arg to int64
 func (sc *ServerAndClient) SendMsg(adr string, args ...any) error {
 	var a []any
 
 	for _, arg := range args {
-		switch arg.(type) {
+		switch t := arg.(type) {
 		case int8:
-			a = append(a, int32(arg.(int8)))
+			a = append(a, int32(t))
 		case uint8:
-			a = append(a, int32(arg.(uint8)))
+			a = append(a, int32(t))
+		case int16:
+			a = append(a, int32(t))
+		case uint16:
+			a = append(a, int32(t))
 		case int:
-			if (arg.(int) <= math.MaxInt32) && (arg.(int) >= math.MinInt32) {
-				a = append(a, int32(arg.(int)))
+			if (t <= math.MaxInt32) && (t >= math.MinInt32) {
+				a = append(a, int32(t))
 			} else {
-				return fmt.Errorf("int32 %d out of range", arg.(int))
+				return fmt.Errorf("int32 %d out of range", t)
 			}
-
-		default:
+		case bool, int64, int32, float32, float64, string, nil, []byte, Timetag:
 			a = append(a, arg)
+		default:
+
 		}
 
 	}
 
-	return sc.Send(NewMessage(adr, a...))
+	return sc.Send(&Message{Address: adr, Arguments: a})
 }
 
 // ListenAndServe listen and serve as an OSC Server

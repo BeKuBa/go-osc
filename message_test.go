@@ -15,9 +15,12 @@ func TestMessage(t *testing.T) {
 
 		assert.Equal(t, oscAddress, message.Address)
 
-		message.Append("string argument")
-		message.Append(123456789)
-		message.Append(true)
+		err := message.Append("string argument")
+		assert.Nil(t, err)
+		err = message.Append(int32(123456789))
+		assert.Nil(t, err)
+		err = message.Append(true)
+		assert.Nil(t, err)
 
 		assert.Equal(t, 3, len(message.Arguments))
 	})
@@ -25,12 +28,22 @@ func TestMessage(t *testing.T) {
 	t.Run("should message equal to another message", func(t *testing.T) {
 		msg1 := NewMessage(oscAddress)
 		msg2 := NewMessage(oscAddress)
-		msg1.Append(1234)
-		msg2.Append(1234)
-		msg1.Append("test string")
-		msg2.Append("test string")
+		err := msg1.Append(int64(1234))
+		assert.Nil(t, err)
+		err = msg2.Append(int64(1234))
+		assert.Nil(t, err)
+		err = msg1.Append("test string")
+		assert.Nil(t, err)
+		err = msg2.Append("test string")
+		assert.Nil(t, err)
 
 		assert.True(t, msg1.Equals(msg2))
+	})
+
+	t.Run("unsuported type int throws error", func(t *testing.T) {
+		msg1 := NewMessage(oscAddress)
+		err := msg1.Append(1234)
+		assert.NotNil(t, err)
 	})
 }
 
@@ -110,6 +123,12 @@ func TestOscMessageMatch(t *testing.T) {
 			false,
 		},
 		{
+			"don't match",
+			"/a",
+			"/a/b",
+			false,
+		},
+		{
 			"match alternatives",
 			"/a/{foo,bar}",
 			"/a/foo",
@@ -128,7 +147,22 @@ func TestOscMessageMatch(t *testing.T) {
 
 		got := msg.Match(tt.addrPattern)
 		if got != tt.want {
-			t.Errorf("%s: msg.Match('%s') = '%t', want = '%t'", tt.desc, tt.addrPattern, got, tt.want)
+			t.Errorf("%s: msg('%v').Match('%s') = '%t', want = '%t'", tt.desc, tt.addr, tt.addrPattern, got, tt.want)
 		}
 	}
+}
+
+func TestClearMessage(t *testing.T) {
+	msg := NewMessage("/msg", int32(4), "msg")
+	assert.Equal(t, "/msg", msg.Address)
+	assert.Equal(t, 2, len(msg.Arguments))
+	msg.Clear()
+	assert.Equal(t, "", msg.Address)
+	assert.Equal(t, 0, len(msg.Arguments))
+}
+
+func TestMatchPanic(t *testing.T) {
+	msg := NewMessage("}/")
+	assert.Panics(t, func() { _ = msg.Match("/msg") })
+
 }
