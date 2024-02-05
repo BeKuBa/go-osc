@@ -132,3 +132,112 @@ func TestOscMessageMatch(t *testing.T) {
 		}
 	}
 }
+
+func TestArgumentGetter(t *testing.T) {
+
+	//bool | int32 | int64 | float32 | float64 | string | []byte | Timetag | nil
+
+	const (
+		cInt32   int32   = 1
+		cInt64   int64   = 2
+		cFloat32 float32 = 3.0
+		cFloat64 float64 = 4.0
+		cString  string  = "5"
+
+		cTimetag Timetag = 9101112
+	)
+	var cBytes []byte = []byte{byte(7), byte(17), byte(27)}
+	// true, false, nil
+
+	var vInt32 int32
+	var vInt64 int64
+	var vFloat32 float32
+
+	var vFloat64 float64
+	var vString string
+	var vTimetag Timetag
+	var vBytes []byte
+	var vTrue = false
+	var vFalse = true
+	var vNil interface{} = true // true as dummy for not nil
+
+	msg := NewMessage("/argtest", cInt32, cInt64, cFloat32, cFloat64, cString, cTimetag, cBytes, true, false, nil)
+
+	//check values
+
+	vInt32, err := msg.Arguments.Int32(0)
+	assert.NoError(t, err)
+	assert.Equal(t, cInt32, vInt32)
+
+	vInt64, err = msg.Arguments.Int64(1)
+	assert.NoError(t, err)
+	assert.Equal(t, cInt64, vInt64)
+
+	vFloat32, err = msg.Arguments.Float32(2)
+	assert.NoError(t, err)
+	assert.Equal(t, cFloat32, vFloat32)
+
+	vFloat64, err = msg.Arguments.Float64(3)
+	assert.NoError(t, err)
+	assert.Equal(t, cFloat64, vFloat64)
+
+	vString, err = msg.Arguments.Str(4)
+	assert.NoError(t, err)
+	assert.Equal(t, cString, vString)
+
+	vTimetag, err = msg.Arguments.Timetag(5)
+	assert.NoError(t, err)
+	assert.Equal(t, cTimetag, vTimetag)
+
+	vBytes, err = msg.Arguments.Bytes(6)
+	assert.NoError(t, err)
+	assert.Equal(t, cBytes, vBytes)
+
+	vTrue, err = msg.Arguments.Bool(7)
+	assert.NoError(t, err)
+	assert.Equal(t, true, vTrue)
+
+	vFalse, err = msg.Arguments.Bool(8)
+	assert.NoError(t, err)
+	assert.Equal(t, false, vFalse)
+
+	vNil = msg.Arguments.Nil(9)
+	assert.Equal(t, nil, vNil)
+
+	// must throw error on wrong type
+	for ix := 0; ix < 10; ix++ {
+		if ix != 0 {
+			_, err := msg.Arguments.Int32(ix)
+			assert.Error(t, err)
+		}
+		if ix != 1 {
+			_, err := msg.Arguments.Int64(ix)
+			assert.Error(t, err)
+		}
+		if ix != 2 {
+			_, err := msg.Arguments.Float32(ix)
+			assert.Error(t, err)
+		}
+		if ix != 3 {
+			_, err := msg.Arguments.Float64(ix)
+			assert.Error(t, err)
+		}
+		if ix != 5 {
+			_, err := msg.Arguments.Timetag(ix)
+			assert.Error(t, err)
+		}
+		if ix != 6 {
+			_, err := msg.Arguments.Bytes(ix)
+			assert.Error(t, err)
+		}
+		if (ix != 7) && (ix != 8) {
+			_, err := msg.Arguments.Bool(ix)
+			assert.Error(t, err)
+		}
+		if ix != 9 {
+			n := msg.Arguments.Nil(ix)
+			assert.NotNil(t, n)
+		}
+	}
+
+}
