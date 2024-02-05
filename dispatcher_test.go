@@ -10,7 +10,7 @@ import (
 
 func TestAddMsgHandler(t *testing.T) {
 	d := NewStandardDispatcher()
-	err := d.AddMsgHandler("/address/test", func(msg *Message, addr net.Addr) {})
+	err := d.AddMsgHandler("/address/test", func(msg *Message) {})
 	if err != nil {
 		t.Error("Expected that OSC address '/address/test' is valid")
 	}
@@ -18,7 +18,7 @@ func TestAddMsgHandler(t *testing.T) {
 
 func TestAddMsgHandlerWithInvalidAddress(t *testing.T) {
 	d := NewStandardDispatcher()
-	err := d.AddMsgHandler("/address*/test", func(msg *Message, addr net.Addr) {})
+	err := d.AddMsgHandler("/address*/test", func(msg *Message) {})
 	if err == nil {
 		t.Error("Expected error with '/address*/test'")
 	}
@@ -43,7 +43,7 @@ func TestServerMessageDispatching(t *testing.T) {
 		}
 	}()
 
-	if err := d.AddMsgHandler(
+	if err := d.AddMsgHandlerExt(
 		"/address/test",
 		func(msg *Message, addr net.Addr) {
 			lenArgs := len(msg.Arguments)

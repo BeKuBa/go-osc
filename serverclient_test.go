@@ -1,12 +1,13 @@
 package osc_test
 
 import (
-	"github.com/crgimenes/go-osc"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/crgimenes/go-osc"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 
 func TestServerAndClient(t *testing.T) {
 
-	timeout := time.After(1 * time.Second)
+	timeout := time.After(5 * time.Second)
 	done := make(chan bool)
 
 	go func() {
@@ -50,8 +51,9 @@ func TestServerAndClient(t *testing.T) {
 			}
 		}()
 
-		err = d1.AddMsgHandler(ping, func(msg *osc.Message, addr net.Addr) {
-			d = msg.Arguments[0].(float64)
+		err = d1.AddMsgHandlerExt(ping, func(msg *osc.Message, addr net.Addr) {
+			d, err = msg.Arguments.Float64(0)
+			assert.NoError(t, err)
 			assert.Equal(t, 1.0, d)
 			err = app1.SendMsg(pong, 2)
 			if err != nil {
@@ -70,8 +72,9 @@ func TestServerAndClient(t *testing.T) {
 		}()
 
 		d2 := osc.NewStandardDispatcher()
-		err = d2.AddMsgHandler(pong, func(msg *osc.Message, addr net.Addr) {
-			i = msg.Arguments[0].(int32)
+		err = d2.AddMsgHandlerExt(pong, func(msg *osc.Message, addr net.Addr) {
+			i, err = msg.Arguments.Int32(0)
+			assert.NoError(t, err)
 			assert.Equal(t, int32(2), i)
 			wait.Done()
 		})

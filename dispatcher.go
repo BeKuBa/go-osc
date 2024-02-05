@@ -10,7 +10,9 @@ import (
 // Dispatcher is an interface for an OSC message dispatcher. A dispatcher is
 // responsible for dispatching received OSC messages.
 type Dispatcher interface {
-	Dispatch(packet Packet, addr net.Addr)
+	Dispatch(packet Packet, addr net.Addr) // NewStandardDispatcher returns an /*
+	// HandleMessage calls itself with the given OSC Message. Implements the
+	// Handler interface for HandlerFunc.
 }
 
 // Handler is an interface for message handlers. Every handler implementation
@@ -19,14 +21,25 @@ type Handler interface {
 	HandleMessage(msg *Message, addr net.Addr)
 }
 
-// HandlerFunc implements the Handler interface. Type definition for an OSC
-// handler function.
-type HandlerFunc func(msg *Message, addr net.Addr)
+// HandlerFuncExt implements the Handler interface. Type definition for an OSC
+// handler function(with msg and addr).
+type HandlerFuncExt func(msg *Message, addr net.Addr)
 
 // HandleMessage calls itself with the given OSC Message. Implements the
-// Handler interface.
-func (f HandlerFunc) HandleMessage(msg *Message, addr net.Addr) {
+// Handler interface for HandlerFuncExt(with msg and addr ).
+func (f HandlerFuncExt) HandleMessage(msg *Message, addr net.Addr) {
 	f(msg, addr)
+}
+
+// HandlerFuncExt implements the Handler interface. Type definition for an OSC
+// handler function.
+type HandlerFunc func(msg *Message)
+
+// NewStandardDispatcher returns an /*
+// HandleMessage calls itself with the given OSC Message. Implements the
+// Handler interface for HandlerFunc.
+func (f HandlerFunc) HandleMessage(msg *Message, addr net.Addr) {
+	f(msg)
 }
 
 // StandardDispatcher is a dispatcher for OSC packets. It handles the dispatching of
@@ -36,7 +49,6 @@ type StandardDispatcher struct {
 	defaultHandler Handler
 }
 
-// NewStandardDispatcher returns an StandardDispatcher.
 func NewStandardDispatcher() *StandardDispatcher {
 	return &StandardDispatcher{
 		handlers:       make(map[string]Handler),
@@ -44,8 +56,9 @@ func NewStandardDispatcher() *StandardDispatcher {
 	}
 }
 
-// AddMsgHandler adds a new message handler for the given OSC address.
-func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) error {
+// AddMsgHandlerExt adds a new message handler (HandlerFuncExt) for the given OSC address.
+func (s *StandardDispatcher) AddMsgHandlerExt(addr string, handler HandlerFuncExt) error {
+
 	if addr == "*" {
 		s.defaultHandler = handler
 		return nil
@@ -64,6 +77,11 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 	s.handlers[addr] = handler
 
 	return nil
+}
+
+// AddMsgHandler adds a new message handler (HandlerFunc) for the given OSC address.
+func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) error {
+	return s.AddMsgHandlerExt(addr, func(msg *Message, addr net.Addr) { handler(msg) })
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.

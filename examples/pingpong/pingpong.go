@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/crgimenes/go-osc"
 	"net"
 	"sync"
+
+	"github.com/crgimenes/go-osc"
 )
 
 func main() {
 	done := sync.WaitGroup{}
-	done.Add(2)
+	done.Add(3)
 
 	addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
 	if err != nil {
@@ -39,7 +40,7 @@ func main() {
 		}
 	}()
 
-	err = d1.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+	err = d1.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
 		fmt.Printf("%v -> %v: %v \n", addr, addr2, msg)
 		err = app1.SendMsg("/pong", 2)
 		if err != nil {
@@ -58,7 +59,7 @@ func main() {
 	}()
 
 	d2 := osc.NewStandardDispatcher()
-	err = d2.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+	err = d2.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
 		fmt.Printf("%v -> %v: %v \n", addr, addr1, msg)
 		done.Done()
 	})
@@ -85,8 +86,8 @@ func main() {
 	}()
 
 	d3 := osc.NewStandardDispatcher()
-	err = d3.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
-		fmt.Printf("d3 %v \n", msg)
+	err = d3.AddMsgHandler("*", func(msg *osc.Message) {
+		fmt.Printf("?? -> 127.0.0.1:9001 %v \n", msg)
 		done.Done()
 	})
 	if err != nil {
@@ -121,10 +122,16 @@ func main() {
 		fmt.Println(err)
 	}
 
+	err = app2.SendMsgTo(addr3, "/pong", 4.0)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	done.Wait()
 }
 
 // output:
-//127.0.0.1:9001 d2 /pong ,i 3
-//127.0.0.1:8000 d1 /ping ,d 1
-//127.0.0.1:9000 d2 /pong ,i 2
+// 127.0.0.1:9001 -> 127.0.0.1:8000: /pong ,i 3
+// 127.0.0.1:8000 -> 127.0.0.1:9000: /ping ,d 1
+// ?? -> 127.0.0.1:9001 /pong ,d 4
+// 127.0.0.1:9000 -> 127.0.0.1:8000: /pong ,i 2

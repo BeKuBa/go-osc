@@ -1,7 +1,6 @@
 package osc
 
 import (
-	"net"
 	"strings"
 	"sync"
 	"testing"
@@ -33,7 +32,7 @@ func TestListenAndServe(t *testing.T) {
 
 	go func() {
 		dispatcher := NewStandardDispatcher()
-		dispatcher.AddMsgHandler("/osc/address", func(msg *Message, addr net.Addr) {
+		dispatcher.AddMsgHandler("/osc/address", func(msg *Message) {
 			assert.Equal(t, "/osc/address", msg.Address)
 			assert.Equal(t, 3, len(msg.Arguments))
 			assert.Equal(t, int32(111), msg.Arguments[0].(int32))
@@ -68,7 +67,7 @@ func TestReadTimeout(t *testing.T) {
 
 	go func() {
 		dispatcher := NewStandardDispatcher()
-		dispatcher.AddMsgHandler("/address/test", func(msg *Message, addr net.Addr) {
+		dispatcher.AddMsgHandler("/address/test", func(msg *Message) {
 			assert.Equal(t, "/address/test", msg.Address)
 			assert.Equal(t, 0, len(msg.Arguments))
 

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/crgimenes/go-osc"
 	"net"
 	"time"
+
+	"github.com/crgimenes/go-osc"
 )
 
 const (
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	d := osc.NewStandardDispatcher()
-	err = d.AddMsgHandler("*", func(msg *osc.Message, addr net.Addr) {
+	err = d.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
 		fmt.Printf("xr %v: %v  \n", addr, msg)
 	})
 	if err != nil {
