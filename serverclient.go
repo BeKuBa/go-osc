@@ -50,18 +50,18 @@ func (sc *ServerAndClient) Send(packet Packet) error {
 }
 
 // SendMsg sends a OSC Message (all int types konverted to int32)
-func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) error {
-	var a []any
+func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...interface{}) error {
+	var a []interface{}
 
 	for _, arg := range args {
-		switch arg.(type) {
+		switch t := arg.(type) {
 		case int8:
-			a = append(a, int32(arg.(int8)))
+			a = append(a, int32(t))
 		case uint8:
-			a = append(a, int32(arg.(uint8)))
+			a = append(a, int32(t))
 		case int:
 			if (arg.(int) <= math.MaxInt32) && (arg.(int) >= math.MinInt32) {
-				a = append(a, int32(arg.(int)))
+				a = append(a, int32(t))
 			} else {
 				return fmt.Errorf("int32 %d out of range", arg.(int))
 			}
@@ -75,7 +75,7 @@ func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) er
 	return sc.SendTo(addr, NewMessage(path, a...))
 }
 
-func (sc *ServerAndClient) SendMsg(path string, args ...any) error {
+func (sc *ServerAndClient) SendMsg(path string, args ...interface{}) error {
 	return sc.SendMsgTo(sc.RAddr, path, args...)
 }
 

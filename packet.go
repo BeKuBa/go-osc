@@ -3,6 +3,7 @@ package osc
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"fmt"
 )
 
@@ -44,7 +45,7 @@ func readBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 	*start += n
 
 	if startTag != bundleTagString {
-		return nil, fmt.Errorf("Invalid bundle start tag: %s", startTag)
+		return nil, errors.New("Invalid bundle start tag: " + startTag)
 	}
 
 	// Read the timetag
