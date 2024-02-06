@@ -10,9 +10,7 @@ import (
 // Dispatcher is an interface for an OSC message dispatcher. A dispatcher is
 // responsible for dispatching received OSC messages.
 type Dispatcher interface {
-	Dispatch(packet Packet, addr net.Addr) // NewStandardDispatcher returns an /*
-	// HandleMessage calls itself with the given OSC Message. Implements the
-	// Handler interface for HandlerFunc.
+	Dispatch(packet Packet, addr net.Addr) error
 }
 
 // Handler is an interface for message handlers. Every handler implementation
@@ -85,11 +83,16 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
-func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) {
+func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) (err error) {
 	switch p := packet.(type) {
 	case *Message:
-		for path, handler := range s.handlers {
-			if p.Match(path) {
+		regex, err := getRegEx(p.Address)
+		if err != nil {
+			return err
+		}
+
+		for addr, handler := range s.handlers {
+			if regex.MatchString(addr) {
 				handler.HandleMessage(p, raddr)
 			}
 		}
@@ -101,12 +104,18 @@ func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) {
 	case *Bundle:
 		timer := time.NewTimer(p.Timetag.ExpiresIn())
 
+		errChan := make(chan error)
 		go func() {
 			<-timer.C
 
 			for _, message := range p.Messages {
-				for path, handler := range s.handlers {
-					if message.Match(path) {
+				regex, err := getRegEx(message.Address)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				for address, handler := range s.handlers {
+					if regex.MatchString(address) {
 						handler.HandleMessage(message, raddr)
 					}
 				}
@@ -118,8 +127,17 @@ func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) {
 
 			// Process all bundles
 			for _, b := range p.Bundles {
-				s.Dispatch(b, raddr)
+				err := s.Dispatch(b, raddr)
+				if err != nil {
+					errChan <- err
+					return
+				}
 			}
+			errChan <- nil
 		}()
+		if err := <-errChan; err != nil {
+			return err
+		}
 	}
+	return nil
 }

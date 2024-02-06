@@ -22,8 +22,22 @@ type Message struct {
 // var _ Packet = (*Message)(nil)
 
 // Append appends the given arguments to the arguments list.
-func (msg *Message) Append(args ...interface{}) {
+func (msg *Message) Append(args ...interface{}) error {
+	// check types of args
+
+	for _, arg := range args {
+		switch t := arg.(type) {
+
+		// OSC types are ok
+		case bool, int32, int64, float32, float64, string, nil, []byte, Timetag: // do nothing
+		// type is not an OSC type
+		default:
+			return fmt.Errorf("unsupported type: %T", t)
+		}
+	}
+
 	msg.Arguments = append(msg.Arguments, args...)
+	return nil
 }
 
 // Equals returns true if the given OSC Message `m` is equal to the current OSC
@@ -47,7 +61,13 @@ func (msg *Message) ClearData() {
 // Match returns true, if the OSC address pattern of the OSC Message matches the given
 // address. The match is case sensitive!
 func (msg *Message) Match(addr string) bool {
-	return getRegEx(msg.Address).MatchString(addr)
+	regex, err := getRegEx(msg.Address)
+	if err != nil {
+		if err != nil {
+			panic("regexp: Compile(msg.Address): " + err.Error())
+		}
+	}
+	return regex.MatchString(addr)
 }
 
 // typeTags returns the type tag string.
@@ -85,10 +105,9 @@ func (msg *Message) String() string {
 			s.WriteString(" Nil")
 
 		case []byte:
-			s.WriteString(fmt.Sprintf(" %s", argType))
+			s.WriteString(fmt.Sprintf(" %d", argType))
 
 		case Timetag:
-
 			s.WriteString(fmt.Sprintf(" %d", Timetag(argType)))
 		}
 	}
@@ -165,7 +184,6 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 
 		case int64:
 			typetags[i+1] = 'h'
-
 			err = binary.Write(payload, binary.BigEndian, t)
 			if err != nil {
 				return nil, err
@@ -210,8 +228,15 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 }
 
 // NewMessage returns a new Message. The address parameter is the OSC address.
+// if args has invalid types it return nil
 func NewMessage(addr string, args ...interface{}) *Message {
-	return &Message{Address: addr, Arguments: args}
+	msg := &Message{Address: addr}
+	err := msg.Append(args...)
+	if err != nil {
+		panic(err)
+	}
+
+	return msg
 }
 
 // Help function for argument getter

@@ -49,9 +49,11 @@ func (sc *ServerAndClient) Send(packet Packet) error {
 	return sc.SendTo(sc.RAddr, packet)
 }
 
-// SendMsg sends a OSC Message (all int types konverted to int32)
-func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...interface{}) error {
-	var a []interface{}
+// SendMsg sends a OSC Message (all int types converted to int32)
+// Default int is int32, include int values in range of int32
+// If you need a int value in range of int64 convert the arg to int64
+func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) error {
+	var a []any
 
 	for _, arg := range args {
 		switch t := arg.(type) {
@@ -59,15 +61,20 @@ func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...interfa
 			a = append(a, int32(t))
 		case uint8:
 			a = append(a, int32(t))
+		case int16:
+			a = append(a, int32(t))
+		case uint16:
+			a = append(a, int32(t))
 		case int:
-			if (arg.(int) <= math.MaxInt32) && (arg.(int) >= math.MinInt32) {
+			if (t <= math.MaxInt32) && (t >= math.MinInt32) {
 				a = append(a, int32(t))
 			} else {
-				return fmt.Errorf("int32 %d out of range", arg.(int))
+				return fmt.Errorf("int32 %d out of range", t)
 			}
-
+		case bool, int64, int32, float32, float64, string, nil, []byte, Timetag:
+			a = append(a, t)
 		default:
-			a = append(a, arg)
+			return fmt.Errorf("wrong datatype, can't send OSC packet")
 		}
 
 	}
