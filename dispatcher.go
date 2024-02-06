@@ -64,12 +64,12 @@ func (s *StandardDispatcher) AddMsgHandlerExt(addr string, handler HandlerFuncEx
 
 	for _, chr := range "*?,[]{}# " {
 		if strings.Contains(addr, fmt.Sprintf("%c", chr)) {
-			return ERROR_OSC_INVALID_CHARACTER
+			return ErrorOscInvalidCharacter
 		}
 	}
 
 	if addressExists(addr, s.handlers) {
-		return ERROR_OSC_ADDRESS_EXISTS
+		return ErrorOscAddressExists
 	}
 
 	s.handlers[addr] = handler

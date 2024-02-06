@@ -32,7 +32,7 @@ func readPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
 		return readBundle(reader, start, end)
 	}
 
-	return nil, ERROR_INVALID_PACKET
+	return nil, ErrorInvalidPacked
 }
 
 // readBundle reads an Bundle from reader.
