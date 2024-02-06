@@ -98,12 +98,12 @@ func (msg *Message) String() string {
 
 	for _, arg := range msg.Arguments {
 		switch argType := (arg).(type) {
-		case bool, int32, int64, float32, float64, string:
+		case bool, int32, int64, float32, float64:
 			s.WriteString(fmt.Sprintf(" %v", argType))
-
+		case string:
+			s.WriteString(fmt.Sprintf(" %q", argType))
 		case nil:
 			s.WriteString(" Nil")
-
 		case []byte:
 			s.WriteString(fmt.Sprintf(" %d", argType))
 

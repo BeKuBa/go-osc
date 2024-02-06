@@ -82,8 +82,8 @@ func TestMessage_String(t *testing.T) {
 		{"nil message", nil, ""},
 		{"message with 1 nil argument", NewMessage("/foo/bar", nil), "/foo/bar ,N Nil"},
 		{"addr_only", NewMessage("/foo/bar"), "/foo/bar ,"},
-		{"one_addr", NewMessage("/foo/bar", "123"), "/foo/bar ,s 123"},
-		{"two_args", NewMessage("/foo/bar", "123", int32(456)), "/foo/bar ,si 123 456"},
+		{"one_addr", NewMessage("/foo/bar", "123"), "/foo/bar ,s \"123\""},
+		{"two_args", NewMessage("/foo/bar", "123", int32(456)), "/foo/bar ,si \"123\" 456"},
 		{"timetag", NewMessage("/foo/bar", Timetag(16818286200017484014)), "/foo/bar ,t 16818286200017484014"},
 		{"bytes", NewMessage("/foo/bar", []byte{51, 52, 53}), "/foo/bar ,b [51 52 53]"},
 	} {
