@@ -9,7 +9,7 @@ import (
 )
 
 // Datatype for Arguments
-type ArgumentsType []interface{}
+type ArgumentsType []any
 
 // Message represents a single OSC message. An OSC message consists of an OSC
 // address pattern and zero or more arguments.
@@ -22,7 +22,7 @@ type Message struct {
 // var _ Packet = (*Message)(nil)
 
 // Append appends the given arguments to the arguments list.
-func (msg *Message) Append(args ...interface{}) error {
+func (msg *Message) Append(args ...any) error {
 	// check types of args
 
 	for _, arg := range args {
@@ -229,7 +229,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 
 // NewMessage returns a new Message. The address parameter is the OSC address.
 // if args has invalid types it return nil
-func NewMessage(addr string, args ...interface{}) *Message {
+func NewMessage(addr string, args ...any) *Message {
 	msg := &Message{Address: addr}
 	err := msg.Append(args...)
 	if err != nil {
@@ -240,7 +240,7 @@ func NewMessage(addr string, args ...interface{}) *Message {
 }
 
 // Help function for argument getter
-func (args ArgumentsType) arg(ix int) (result interface{}, err error) {
+func (args ArgumentsType) arg(ix int) (result any, err error) {
 	if ix >= 0 && ix < len(args) {
 		return args[ix], nil
 	}
@@ -370,8 +370,8 @@ func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
 
 // Argument getter for nil value
 // also nil if ix out of range
-func (args *ArgumentsType) Nil(ix int) interface{} {
-	var dummy interface{} = true
+func (args *ArgumentsType) Nil(ix int) any {
+	var dummy any = true
 	if v, err := args.arg(ix); err == nil {
 		if v != nil {
 			return dummy

@@ -38,7 +38,7 @@ func getRegEx(pattern string) (*regexp.Regexp, error) {
 }
 
 // getTypeTag returns the OSC type tag for the given argument.
-func getTypeTag(arg interface{}) byte {
+func getTypeTag(arg any) byte {
 	switch t := arg.(type) {
 	case bool:
 		if t {

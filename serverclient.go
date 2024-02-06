@@ -82,7 +82,7 @@ func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) er
 	return sc.SendTo(addr, NewMessage(path, a...))
 }
 
-func (sc *ServerAndClient) SendMsg(path string, args ...interface{}) error {
+func (sc *ServerAndClient) SendMsg(path string, args ...any) error {
 	return sc.SendMsgTo(sc.RAddr, path, args...)
 }
 
