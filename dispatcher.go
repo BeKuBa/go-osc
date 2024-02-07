@@ -2,6 +2,7 @@ package osc
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"time"
 )
@@ -9,22 +10,33 @@ import (
 // Dispatcher is an interface for an OSC message dispatcher. A dispatcher is
 // responsible for dispatching received OSC messages.
 type Dispatcher interface {
-	Dispatch(packet Packet) error
+	Dispatch(packet Packet, addr net.Addr) error
 }
 
 // Handler is an interface for message handlers. Every handler implementation
 // for an OSC message must implement this interface.
 type Handler interface {
-	HandleMessage(msg *Message)
+	HandleMessage(msg *Message, addr net.Addr)
 }
 
-// HandlerFunc implements the Handler interface. Type definition for an OSC
+// HandlerFuncExt implements the Handler interface. Type definition for an OSC
+// handler function(with msg and addr).
+type HandlerFuncExt func(msg *Message, addr net.Addr)
+
+// HandleMessage calls itself with the given OSC Message. Implements the
+// Handler interface for HandlerFuncExt(with msg and addr ).
+func (f HandlerFuncExt) HandleMessage(msg *Message, addr net.Addr) {
+	f(msg, addr)
+}
+
+// HandlerFuncExt implements the Handler interface. Type definition for an OSC
 // handler function.
 type HandlerFunc func(msg *Message)
 
+// NewStandardDispatcher returns an /*
 // HandleMessage calls itself with the given OSC Message. Implements the
-// Handler interface.
-func (f HandlerFunc) HandleMessage(msg *Message) {
+// Handler interface for HandlerFunc.
+func (f HandlerFunc) HandleMessage(msg *Message, addr net.Addr) {
 	f(msg)
 }
 
@@ -35,7 +47,6 @@ type StandardDispatcher struct {
 	defaultHandler Handler
 }
 
-// NewStandardDispatcher returns an StandardDispatcher.
 func NewStandardDispatcher() *StandardDispatcher {
 	return &StandardDispatcher{
 		handlers:       make(map[string]Handler),
@@ -43,8 +54,9 @@ func NewStandardDispatcher() *StandardDispatcher {
 	}
 }
 
-// AddMsgHandler adds a new message handler for the given OSC address.
-func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) error {
+// AddMsgHandlerExt adds a new message handler (HandlerFuncExt) for the given OSC address.
+func (s *StandardDispatcher) AddMsgHandlerExt(addr string, handler HandlerFuncExt) error {
+
 	if addr == "*" {
 		s.defaultHandler = handler
 		return nil
@@ -52,12 +64,12 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 
 	for _, chr := range "*?,[]{}# " {
 		if strings.Contains(addr, fmt.Sprintf("%c", chr)) {
-			return ERROR_OSC_INVALID_CHARACTER
+			return ErrorOscInvalidCharacter
 		}
 	}
 
 	if addressExists(addr, s.handlers) {
-		return ERROR_OSC_ADDRESS_EXISTS
+		return ErrorOscAddressExists
 	}
 
 	s.handlers[addr] = handler
@@ -65,8 +77,13 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 	return nil
 }
 
+// AddMsgHandler adds a new message handler (HandlerFunc) for the given OSC address.
+func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) error {
+	return s.AddMsgHandlerExt(addr, func(msg *Message, addr net.Addr) { handler(msg) })
+}
+
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
-func (s *StandardDispatcher) Dispatch(packet Packet) (err error) {
+func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) (err error) {
 	switch p := packet.(type) {
 	case *Message:
 		regex, err := getRegEx(p.Address)
@@ -76,12 +93,12 @@ func (s *StandardDispatcher) Dispatch(packet Packet) (err error) {
 
 		for addr, handler := range s.handlers {
 			if regex.MatchString(addr) {
-				handler.HandleMessage(p)
+				handler.HandleMessage(p, raddr)
 			}
 		}
 
 		if s.defaultHandler != nil {
-			s.defaultHandler.HandleMessage(p)
+			s.defaultHandler.HandleMessage(p, raddr)
 		}
 
 	case *Bundle:
@@ -99,18 +116,18 @@ func (s *StandardDispatcher) Dispatch(packet Packet) (err error) {
 				}
 				for address, handler := range s.handlers {
 					if regex.MatchString(address) {
-						handler.HandleMessage(message)
+						handler.HandleMessage(message, raddr)
 					}
 				}
 
 				if s.defaultHandler != nil {
-					s.defaultHandler.HandleMessage(message)
+					s.defaultHandler.HandleMessage(message, raddr)
 				}
 			}
 
 			// Process all bundles
 			for _, b := range p.Bundles {
-				err := s.Dispatch(b)
+				err := s.Dispatch(b, raddr)
 				if err != nil {
 					errChan <- err
 					return

@@ -17,13 +17,13 @@ const (
 
 func TestServerAndClient(t *testing.T) {
 
-	timeout := time.After(1 * time.Second)
+	timeout := time.After(5 * time.Second)
 	done := make(chan bool)
 
 	go func() {
 
 		wait := sync.WaitGroup{}
-		wait.Add(1)
+		wait.Add(2)
 
 		var pingF64 = 0.0
 
@@ -56,83 +56,84 @@ func TestServerAndClient(t *testing.T) {
 		const cTimetag osc.Timetag = 16818286200017484014
 
 		addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 
 		addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 
+		// app1
 		d1 := osc.NewStandardDispatcher()
 		app1 := osc.NewServerAndClient(d1)
-		err = app1.NewConn(addr2, addr1)
+		err = app1.NewConn(addr1, addr2)
+		assert.NoError(t, err)
+
+		defer func() {
+			err := app1.Close()
+			assert.NoError(t, err)
+		}()
 
 		err = d1.AddMsgHandler(ping, func(msg *osc.Message) {
 			pingF64 = msg.Arguments[0].(float64)
 
 			err = app1.SendMsg(pong, cBoolTrue, cBoolFalse, cI32, cI64, cF32, cF64, cStrTest, cStrEmpty, cI, nil, cArray, cTimetag)
 
-			if err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, err)
 		})
-		if err != nil {
-			t.Error(err)
-		}
+
+		assert.NoError(t, err)
 
 		go func() {
 			err := app1.ListenAndServe()
-			if err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, err)
 		}()
 
+		// app2
 		d2 := osc.NewStandardDispatcher()
-		err = d2.AddMsgHandler(pong, func(msg *osc.Message) {
+		err = d2.AddMsgHandlerExt(pong, func(msg *osc.Message, raddr net.Addr) {
 
-			boolTrue = msg.Arguments[0].(bool)
-			boolFalse = msg.Arguments[1].(bool)
-			i32 = msg.Arguments[2].(int32)
-			i64 = msg.Arguments[3].(int64)
-			f32 = msg.Arguments[4].(float32)
-			f64 = msg.Arguments[5].(float64)
-			strTest = msg.Arguments[6].(string)
-			strEmpty = msg.Arguments[7].(string)
-			i = int(msg.Arguments[8].(int32))
-			null = msg.Arguments[9]
-			array = msg.Arguments[10].([]byte)
-			timetag = msg.Arguments[11].(osc.Timetag)
+			ip1 := addr1.String()
+			ip2 := raddr.String()
 
+			if ip1 == ip2 {
+				boolTrue = msg.Arguments[0].(bool)
+				boolFalse = msg.Arguments[1].(bool)
+				i32 = msg.Arguments[2].(int32)
+				i64 = msg.Arguments[3].(int64)
+				f32 = msg.Arguments[4].(float32)
+				f64 = msg.Arguments[5].(float64)
+				strTest = msg.Arguments[6].(string)
+				strEmpty = msg.Arguments[7].(string)
+				i = int(msg.Arguments[8].(int32))
+				null = msg.Arguments[9]
+				array = msg.Arguments[10].([]byte)
+				timetag = msg.Arguments[11].(osc.Timetag)
+			}
 			wait.Done()
 		})
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 
 		app2 := osc.NewServerAndClient(d2)
-		err = app2.NewConn(addr1, addr2)
-		if err != nil {
-			t.Error(err)
-		}
+		err = app2.NewConn(addr2, addr1)
+		assert.NoError(t, err)
 		defer func() {
 			err := app2.Close()
-			if err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, err)
 		}()
 		go func() {
 			err := app2.ListenAndServe()
-			if err != nil {
-				t.Error(err)
-			}
+			assert.NoError(t, err)
 		}()
 
+		// app2 send ping, app1 send pong, app3 send pong
 		err = app2.SendMsg(ping, 1.0)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
+
+		app3 := osc.NewServerAndClient(nil)
+		err = app3.NewConn(nil, nil)
+		assert.NoError(t, err)
+
+		err = app3.SendMsgTo(addr2, pong, 2)
+		assert.NoError(t, err)
 
 		wait.Wait()
 

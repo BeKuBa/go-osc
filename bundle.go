@@ -29,7 +29,7 @@ func (b *Bundle) Append(pck Packet) error {
 		b.Messages = append(b.Messages, t)
 
 	default:
-		return ERROR_UNSUPORTED_PACKAGE
+		return ErrorUnsuportedPackage
 	}
 
 	return nil

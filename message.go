@@ -8,18 +8,21 @@ import (
 	"strings"
 )
 
+// Datatype for Arguments
+type ArgumentsType []any
+
 // Message represents a single OSC message. An OSC message consists of an OSC
 // address pattern and zero or more arguments.
 type Message struct {
 	Address   string
-	Arguments []interface{}
+	Arguments ArgumentsType
 }
 
 // Verify that Messages implements the Packet interface.
 // var _ Packet = (*Message)(nil)
 
 // Append appends the given arguments to the arguments list.
-func (msg *Message) Append(args ...interface{}) error {
+func (msg *Message) Append(args ...any) error {
 	// check types of args
 
 	for _, arg := range args {
@@ -94,18 +97,17 @@ func (msg *Message) String() string {
 	s.WriteString(fmt.Sprintf("%s %s", msg.Address, tags))
 
 	for _, arg := range msg.Arguments {
-		switch argType := arg.(type) {
-		case bool, int32, int64, float32, float64, string:
+		switch argType := (arg).(type) {
+		case bool, int32, int64, float32, float64:
 			s.WriteString(fmt.Sprintf(" %v", argType))
-
+		case string:
+			s.WriteString(fmt.Sprintf(" %q", argType))
 		case nil:
 			s.WriteString(" Nil")
-
 		case []byte:
-			s.WriteString(fmt.Sprintf(" %s", argType))
+			s.WriteString(fmt.Sprintf(" %d", argType))
 
 		case Timetag:
-
 			s.WriteString(fmt.Sprintf(" %d", Timetag(argType)))
 		}
 	}
@@ -227,7 +229,7 @@ func (msg *Message) MarshalBinary() ([]byte, error) {
 
 // NewMessage returns a new Message. The address parameter is the OSC address.
 // if args has invalid types it return nil
-func NewMessage(addr string, args ...interface{}) *Message {
+func NewMessage(addr string, args ...any) *Message {
 	msg := &Message{Address: addr}
 	err := msg.Append(args...)
 	if err != nil {
@@ -235,4 +237,135 @@ func NewMessage(addr string, args ...interface{}) *Message {
 	}
 
 	return msg
+}
+
+// Help function for argument getter
+func (args ArgumentsType) arg(ix int) (result any, err error) {
+	if ix >= 0 && ix < len(args) {
+		return args[ix], nil
+	}
+	return nil, fmt.Errorf("out of bounds")
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Bool(ix int) (bool, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case bool:
+			return t, nil
+		default:
+			return false, fmt.Errorf("type(%T) is not bool", v)
+		}
+	}
+	return false, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Int32(ix int) (int32, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case int32:
+			return t, nil
+		default:
+			return 0, fmt.Errorf("type(%T) is not int32", v)
+		}
+	}
+	return 0, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Int64(ix int) (int64, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case int64:
+			return t, nil
+		default:
+			return 0, fmt.Errorf("type(%T) is not int64", v)
+		}
+	}
+	return 0, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Float32(ix int) (float32, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case float32:
+			return t, nil
+		default:
+			return 0.0, fmt.Errorf("type(%T) is not float32", v)
+		}
+	}
+	return 0.0, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Float64(ix int) (float64, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case float64:
+			return t, nil
+		default:
+			return 0.0, fmt.Errorf("type(%T) is not float64", v)
+		}
+	}
+	return 0.0, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Str(ix int) (string, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case string:
+			return t, nil
+		default:
+			return "", fmt.Errorf("type(%T) is not string", v)
+		}
+	}
+	return "", err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case []byte:
+			return t, nil
+		default:
+			return nil, fmt.Errorf("type(%T) is not []byte", v)
+		}
+	}
+	return nil, err
+}
+
+// Argument getter for bool value
+func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
+	v, err := args.arg(ix)
+	if err == nil {
+		switch t := v.(type) {
+		case Timetag:
+			return t, nil
+		default:
+			return 0, fmt.Errorf("type(%T) is not Timetag", v)
+		}
+	}
+	return 0, err
+}
+
+// Argument getter for nil value
+// also nil if ix out of range
+func (args *ArgumentsType) Nil(ix int) any {
+	var dummy any = true
+	v, err := args.arg(ix)
+	if (err == nil) && (v != nil) {
+		return dummy
+	}
+	return nil
 }

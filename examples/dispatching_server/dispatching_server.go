@@ -11,7 +11,7 @@ func main() {
 
 	d := osc.NewStandardDispatcher()
 	d.AddMsgHandler("/message/address", func(msg *osc.Message) {
-		fmt.Println("Received message:", msg)
+		fmt.Printf("Received message from %v: %v", addr, msg)
 	})
 
 	server := &osc.Server{

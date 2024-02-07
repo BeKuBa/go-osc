@@ -1,12 +1,9 @@
 package osc
 
 import (
-	"math"
 	"regexp"
 	"strings"
 )
-
-const IsInt64 = math.MaxInt == math.MaxInt64
 
 // addressExists returns true if the OSC address `addr` is found in `handlers`.
 func addressExists(addr string, handlers map[string]Handler) bool {
@@ -41,7 +38,7 @@ func getRegEx(pattern string) (*regexp.Regexp, error) {
 }
 
 // getTypeTag returns the OSC type tag for the given argument.
-func getTypeTag(arg interface{}) byte {
+func getTypeTag(arg any) byte {
 	switch t := arg.(type) {
 	case bool:
 		if t {

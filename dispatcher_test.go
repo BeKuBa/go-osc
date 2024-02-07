@@ -1,6 +1,7 @@
 package osc
 
 import (
+	"net"
 	"strconv"
 	"sync"
 	"testing"
@@ -81,7 +82,7 @@ func TestDispatch(t *testing.T) {
 		err = nil
 		for _, tt := range tc {
 			msg := NewMessage(tt.msg)
-			err = d.Dispatch(msg)
+			err = d.Dispatch(msg, nil)
 			if tt.err {
 				assert.NotNil(t, err, "%s: msgPath = '%s', expect error", tt.desc, tt.msg)
 			} else {
@@ -110,7 +111,7 @@ func TestDispatch(t *testing.T) {
 		err = bundle.Append(NewMessage(handlerName[2], "test2"))
 		assert.Nil(t, err)
 
-		err = d.Dispatch(bundle)
+		err = d.Dispatch(bundle, nil)
 		assert.Nil(t, err)
 
 		assert.False(t, b[0], "check handlerFunc %v", handlerName[0])
@@ -129,7 +130,7 @@ func TestDispatch(t *testing.T) {
 		err = bundle3.Append(NewMessage(handlerName[0]))
 		assert.Nil(t, err)
 
-		err = d.Dispatch(bundle2)
+		err = d.Dispatch(bundle2, nil)
 		assert.Nil(t, err)
 
 		assert.True(t, b[0], "check handlerFunc %v", handlerName[0])
@@ -140,13 +141,13 @@ func TestDispatch(t *testing.T) {
 		// bundle: test error handling
 		err = bundle.Append(NewMessage("}/"))
 		assert.Nil(t, err)
-		err = d.Dispatch(bundle)
+		err = d.Dispatch(bundle, nil)
 		assert.NotNil(t, err)
 
 		// bundle3: test error handling
 		err = bundle3.Append(NewMessage("}/"))
 		assert.Nil(t, err)
-		err = d.Dispatch(bundle2)
+		err = d.Dispatch(bundle2, nil)
 		assert.NotNil(t, err)
 
 	})
@@ -187,9 +188,9 @@ func TestServerMessageDispatching(t *testing.T) {
 		}
 	}()
 
-	if err := d.AddMsgHandler(
+	if err := d.AddMsgHandlerExt(
 		"/address/test",
-		func(msg *Message) {
+		func(msg *Message, addr net.Addr) {
 			lenArgs := len(msg.Arguments)
 			if lenArgs != 1 {
 				t.Errorf("Argument length should be 1 and is: %d", lenArgs)
