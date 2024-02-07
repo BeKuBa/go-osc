@@ -249,135 +249,123 @@ func (args ArgumentsType) arg(ix int) (result any, err error) {
 
 // Argument getter for bool value
 func (args *ArgumentsType) Bool(ix int) (bool, error) {
-
-	if v, err := args.arg(ix); err == nil {
-
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case bool:
 			return t, nil
 		default:
 			return false, fmt.Errorf("type(%T) is not bool", v)
 		}
-	} else {
-		return false, err
 	}
+	return false, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Int32(ix int) (int32, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case int32:
 			return t, nil
 		default:
 			return 0, fmt.Errorf("type(%T) is not int32", v)
 		}
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Int64(ix int) (int64, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case int64:
 			return t, nil
 		default:
 			return 0, fmt.Errorf("type(%T) is not int64", v)
 		}
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Float32(ix int) (float32, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case float32:
 			return t, nil
 		default:
 			return 0.0, fmt.Errorf("type(%T) is not float32", v)
 		}
-	} else {
-		return 0.0, err
 	}
+	return 0.0, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Float64(ix int) (float64, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case float64:
 			return t, nil
 		default:
 			return 0.0, fmt.Errorf("type(%T) is not float64", v)
 		}
-	} else {
-		return 0.0, err
 	}
+	return 0.0, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Str(ix int) (string, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case string:
 			return t, nil
 		default:
 			return "", fmt.Errorf("type(%T) is not string", v)
 		}
-	} else {
-		return "", err
 	}
+	return "", err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case []byte:
 			return t, nil
 		default:
 			return nil, fmt.Errorf("type(%T) is not []byte", v)
 		}
-	} else {
-		return nil, err
 	}
+	return nil, err
 }
 
 // Argument getter for bool value
 func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
-
-	if v, err := args.arg(ix); err == nil {
+	v, err := args.arg(ix)
+	if err == nil {
 		switch t := v.(type) {
 		case Timetag:
 			return t, nil
 		default:
 			return 0, fmt.Errorf("type(%T) is not Timetag", v)
 		}
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 // Argument getter for nil value
 // also nil if ix out of range
 func (args *ArgumentsType) Nil(ix int) any {
 	var dummy any = true
-	if v, err := args.arg(ix); err == nil {
-		if v != nil {
-			return dummy
-		}
-	} else {
-		return nil
+	v, err := args.arg(ix)
+	if (err == nil) && (v != nil) {
+		return dummy
 	}
 	return nil
 }
