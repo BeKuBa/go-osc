@@ -162,3 +162,87 @@ func TestServerAndClient(t *testing.T) {
 	case <-done:
 	}
 }
+
+func TestReadTimeout(t *testing.T) {
+
+	addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
+	assert.NoError(t, err)
+
+	addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
+	assert.NoError(t, err)
+
+	// app1
+	d1 := osc.NewStandardDispatcher()
+	app1 := osc.NewServerAndClient(nil)
+	err = app1.NewConn(addr1, addr2)
+	assert.NoError(t, err)
+	app1.Server().ReadTimeout = 100 * time.Millisecond
+
+	defer func() {
+		err := app1.Close()
+		assert.NoError(t, err)
+	}()
+
+	get := false
+	err = d1.AddMsgHandler(ping, func(msg *osc.Message) {
+		get = true
+	})
+
+	assert.NoError(t, err)
+
+	// app2
+	app2 := osc.NewServerAndClient(nil)
+	err = app2.NewConn(addr2, addr1)
+	assert.NoError(t, err)
+	defer func() {
+		err := app2.Close()
+		assert.NoError(t, err)
+	}()
+
+	app1.Server().ReadTimeout = 100 * time.Millisecond
+
+	// Intime
+	wait := sync.WaitGroup{}
+	wait.Add(1)
+
+	go func() {
+
+		p, addr, err := app1.Server().Read(app1.Conn())
+		assert.NoError(t, err)
+		if err == nil {
+			d1.Dispatch(p, addr)
+		}
+
+		wait.Done()
+	}()
+	time.Sleep(50 * time.Millisecond)
+	// app2 send ping
+	err = app2.SendMsg(ping)
+	assert.NoError(t, err)
+
+	wait.Wait()
+	assert.Equal(t, true, get)
+
+	// Timeout
+	get = false
+	wait = sync.WaitGroup{}
+	wait.Add(1)
+
+	go func() {
+
+		p, addr, err := app1.Server().Read(app1.Conn())
+		assert.Error(t, err)
+		if err == nil {
+			d1.Dispatch(p, addr)
+		}
+
+		wait.Done()
+	}()
+	time.Sleep(150 * time.Millisecond)
+	// app2 send ping
+	err = app2.SendMsg(ping)
+	assert.NoError(t, err)
+
+	wait.Wait()
+	assert.Equal(t, false, get)
+}

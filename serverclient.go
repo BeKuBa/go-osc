@@ -6,17 +6,19 @@ import (
 	"net"
 )
 
+// ServerAndClient structure
 type ServerAndClient struct {
 	conn   *net.UDPConn
 	RAddr  *net.UDPAddr // default remote adr (for Send and SendMsg)
 	server *Server
 }
 
+// NewServerAndClient create a new ServerandClient
 func NewServerAndClient(dispatcher Dispatcher) *ServerAndClient {
 	return &ServerAndClient{server: &Server{Dispatcher: dispatcher}}
 }
 
-// New UDP Connection for Server and Client
+// NewConn create a new UDP Connection for Server and Client
 func (sc *ServerAndClient) NewConn(laddr *net.UDPAddr, raddr *net.UDPAddr) error {
 	conn, err := net.ListenUDP("udp", laddr)
 	if err != nil {
@@ -29,7 +31,7 @@ func (sc *ServerAndClient) NewConn(laddr *net.UDPAddr, raddr *net.UDPAddr) error
 	return err
 }
 
-// Send sends an OSC Bundle or an OSC Message (as OSC Client).
+// SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given address.
 func (sc *ServerAndClient) SendTo(raddr net.Addr, packet Packet) (err error) {
 	if sc.conn != nil {
 		data, err := packet.MarshalBinary()
@@ -45,11 +47,12 @@ func (sc *ServerAndClient) SendTo(raddr net.Addr, packet Packet) (err error) {
 	return err
 }
 
+// Send sends an OSC Bundle or an OSC Message (as OSC Client).
 func (sc *ServerAndClient) Send(packet Packet) error {
 	return sc.SendTo(sc.RAddr, packet)
 }
 
-// SendMsg sends a OSC Message (all int types converted to int32)
+// SendMsgTo sends a OSC Message to a given address(all int types converted to int32)
 // Default int is int32, include int values in range of int32
 // If you need a int value in range of int64 convert the arg to int64
 func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) error {
@@ -82,6 +85,9 @@ func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) er
 	return sc.SendTo(addr, NewMessage(path, a...))
 }
 
+// SendMsg sends a OSC Message to a given address(all int types converted to int32)
+// Default int is int32, include int values in range of int32
+// If you need a int value in range of int64 convert the arg to int64
 func (sc *ServerAndClient) SendMsg(path string, args ...any) error {
 	return sc.SendMsgTo(sc.RAddr, path, args...)
 }
@@ -102,11 +108,11 @@ func (sc *ServerAndClient) ListenAndServe() error {
 		}
 
 		return err
-	} else {
-		return fmt.Errorf("ServerAndClient connection is not created")
 	}
+	return fmt.Errorf("ServerAndClient connection is not created")
 }
 
+// Close close ServerAndClient connection
 func (sc *ServerAndClient) Close() error {
 	conn := sc.conn
 	// for handle return server.serve error
@@ -117,6 +123,12 @@ func (sc *ServerAndClient) Close() error {
 	return err
 }
 
+// Conn ServerAndClient conn
 func (sc *ServerAndClient) Conn() *net.UDPConn {
 	return sc.conn
+}
+
+// Server ServerAndClient conn
+func (sc *ServerAndClient) Server() *Server {
+	return sc.server
 }
