@@ -201,7 +201,7 @@ func TestReadTimeout(t *testing.T) {
 
 	app1.Server().ReadTimeout = 100 * time.Millisecond
 
-	// Intime
+	// In time
 	wait := sync.WaitGroup{}
 	wait.Add(1)
 

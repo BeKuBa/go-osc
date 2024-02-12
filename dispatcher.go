@@ -29,11 +29,10 @@ func (f HandlerFuncExt) HandleMessage(msg *Message, addr net.Addr) {
 	f(msg, addr)
 }
 
-// HandlerFuncExt implements the Handler interface. Type definition for an OSC
+// HandlerFunc implements the Handler interface. Type definition for an OSC
 // handler function.
 type HandlerFunc func(msg *Message)
 
-// NewStandardDispatcher returns an /*
 // HandleMessage calls itself with the given OSC Message. Implements the
 // Handler interface for HandlerFunc.
 func (f HandlerFunc) HandleMessage(msg *Message, addr net.Addr) {
@@ -47,6 +46,7 @@ type StandardDispatcher struct {
 	defaultHandler Handler
 }
 
+// NewStandardDispatcher returns an Standarddispatcher
 func NewStandardDispatcher() *StandardDispatcher {
 	return &StandardDispatcher{
 		handlers:       make(map[string]Handler),

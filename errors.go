@@ -2,6 +2,7 @@ package osc
 
 import "errors"
 
+// OSC Errors
 var (
 	ErrorOscInvalidCharacter = errors.New("OSC Address string may not contain any characters in \"*?,[]{}#")
 	ErrorOscAddressExists    = errors.New("OSC address exists already")
