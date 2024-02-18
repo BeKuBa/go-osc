@@ -23,7 +23,7 @@ func NewTimetag() Timetag {
 	return timeToTimetag(time.Now().UTC())
 }
 
-// NewTimetag returns a new OSC time tag object.
+// NewTimetagFromTime returns a new OSC time tag object.
 func NewTimetagFromTime(timeStamp time.Time) Timetag {
 	return timeToTimetag(timeStamp)
 }

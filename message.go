@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Datatype for Arguments
+// ArgumentsType = Datatype for Arguments
 type ArgumentsType []any
 
 // Message represents a single OSC message. An OSC message consists of an OSC
@@ -247,7 +247,7 @@ func (args ArgumentsType) arg(ix int) (result any, err error) {
 	return nil, fmt.Errorf("out of bounds")
 }
 
-// Argument getter for bool value
+// Bool Argument getter for bool value
 func (args *ArgumentsType) Bool(ix int) (bool, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -261,7 +261,7 @@ func (args *ArgumentsType) Bool(ix int) (bool, error) {
 	return false, err
 }
 
-// Argument getter for bool value
+// Int32 Argument getter for bool value
 func (args *ArgumentsType) Int32(ix int) (int32, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -275,7 +275,7 @@ func (args *ArgumentsType) Int32(ix int) (int32, error) {
 	return 0, err
 }
 
-// Argument getter for bool value
+// Int64 Argument getter for bool value
 func (args *ArgumentsType) Int64(ix int) (int64, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -289,7 +289,7 @@ func (args *ArgumentsType) Int64(ix int) (int64, error) {
 	return 0, err
 }
 
-// Argument getter for bool value
+// Float32 Argument getter for bool value
 func (args *ArgumentsType) Float32(ix int) (float32, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -303,7 +303,7 @@ func (args *ArgumentsType) Float32(ix int) (float32, error) {
 	return 0.0, err
 }
 
-// Argument getter for bool value
+// Float64 Argument getter for bool value
 func (args *ArgumentsType) Float64(ix int) (float64, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -317,7 +317,7 @@ func (args *ArgumentsType) Float64(ix int) (float64, error) {
 	return 0.0, err
 }
 
-// Argument getter for bool value
+// Str Argument getter for bool value
 func (args *ArgumentsType) Str(ix int) (string, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -331,7 +331,7 @@ func (args *ArgumentsType) Str(ix int) (string, error) {
 	return "", err
 }
 
-// Argument getter for bool value
+// Bytes Argument getter for bool value
 func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -345,7 +345,7 @@ func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
 	return nil, err
 }
 
-// Argument getter for bool value
+// Timetag Argument getter for bool value
 func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -359,7 +359,7 @@ func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
 	return 0, err
 }
 
-// Argument getter for nil value
+// Nil Argument getter for nil value
 // also nil if ix out of range
 func (args *ArgumentsType) Nil(ix int) any {
 	var dummy any = true
