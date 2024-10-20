@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/crgimenes/go-osc"
+	"github.com/bekuba/go-osc"
 )
 
 const (
@@ -21,10 +21,13 @@ const (
 // send /xinfo, /xremote, /status
 func main() {
 
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%v:%v", xrIP, xr18Port))
+	addr := fmt.Sprintf("%v:%v", xrIP, xr18Port)
+
+	app, err := osc.NewServerAndClient(":0")
 	if err != nil {
 		fmt.Println(err)
 	}
+	defer app.Close()
 
 	d := osc.NewStandardDispatcher()
 	err = d.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
@@ -34,38 +37,26 @@ func main() {
 		fmt.Println(err)
 	}
 
-	app := osc.NewServerAndClient(d)
-	err = app.NewConn(nil, addr)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer func() {
-		err := app.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-
 	go func() {
-		err = app.ListenAndServe()
+		err = app.ListenAndServe(d)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}()
 
-	app.SendMsg("/xinfo")
+	app.SendMsgTo(addr, "/xinfo")
 
 	for {
 		// keepp connection alive (for multi client usage)
-		app.SendMsg("/xremote")
+		app.SendMsgTo(addr, "/xremote")
 		// show status of xair
-		app.SendMsg("/status")
+		app.SendMsgTo(addr, "/status")
 
 		time.Sleep(1 * time.Second)
 	}
 
 	// Output:
-	//	xr 10.0.1.174:10024: /xinfo ,ssss 10.0.1.174 XR18-35-54-8A XR18 1.18
+	//	xr 10.0.1.174:10024: /xinfo ,ssss 10.0.1.174 XR18-35-54-8A XR18 1.22
 	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A
 	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A
 	//	xr 10.0.1.174:10024: /status ,sss active 10.0.1.174 XR18-35-54-8A

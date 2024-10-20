@@ -2,47 +2,31 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"sync"
 
-	"github.com/crgimenes/go-osc"
+	"github.com/bekuba/go-osc"
 )
 
 func main() {
 	done := sync.WaitGroup{}
 	done.Add(3)
 
-	addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
-	if err != nil {
-		fmt.Println(err)
-	}
+	addr1 := "127.0.0.1:8000"
+	addr2 := "127.0.0.1:9000"
+	addr3 := "127.0.0.1:9001"
 
-	addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
+	app1, err := osc.NewServerAndClient(addr2)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-
-	addr3, err := net.ResolveUDPAddr("udp", "127.0.0.1:9001")
-	if err != nil {
-		fmt.Println(err)
-	}
+	defer app1.Close()
 
 	d1 := osc.NewStandardDispatcher()
-	app1 := osc.NewServerAndClient(d1)
-	err = app1.NewConn(addr2, addr1)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer func() {
-		err := app1.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-
 	err = d1.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
 		fmt.Printf("%v -> %v: %v \n", addr, addr2, msg)
-		err = app1.SendMsg("/pong", 2)
+		err = app1.SendMsgTo(addr1, "/pong", 2)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -52,7 +36,7 @@ func main() {
 	}
 
 	go func() {
-		err := app1.ListenAndServe()
+		err := app1.ListenAndServe(d1)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -67,19 +51,14 @@ func main() {
 		fmt.Println(err)
 	}
 
-	app2 := osc.NewServerAndClient(d2)
-	err = app2.NewConn(addr1, addr2)
+	app2, err := osc.NewServerAndClient(addr1)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	defer func() {
-		err := app2.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
+	defer app2.Close()
+
 	go func() {
-		err := app2.ListenAndServe()
+		err := app2.ListenAndServe(d2)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -94,25 +73,18 @@ func main() {
 		fmt.Println(err)
 	}
 
-	app3 := osc.NewServerAndClient(d3)
-	err = app3.NewConn(addr3, nil)
+	app3, err := osc.NewServerAndClient(addr3)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	defer func() {
-		err := app3.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
 	go func() {
-		err := app3.ListenAndServe()
+		err := app3.ListenAndServe(d3)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}()
 
-	err = app2.SendMsg("/ping", 1.0)
+	err = app2.SendMsgTo(addr2, "/ping", 1.0)
 	if err != nil {
 		fmt.Println(err)
 	}

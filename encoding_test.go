@@ -1,4 +1,4 @@
-package osc
+package osc_test
 
 import (
 	"bufio"
@@ -6,56 +6,58 @@ import (
 	"io"
 	"reflect"
 	"testing"
+
+	"github.com/bekuba/go-osc"
 )
 
 func TestPadBytesNeeded(t *testing.T) {
 	var n int
-	n = padBytesNeeded(4)
+	n = osc.PadBytesNeeded(4)
 	if n != 0 {
 		t.Errorf("Number of pad bytes should be 0 and is: %d", n)
 	}
 
-	n = padBytesNeeded(3)
+	n = osc.PadBytesNeeded(3)
 	if n != 1 {
 		t.Errorf("Number of pad bytes should be 1 and is: %d", n)
 	}
 
-	n = padBytesNeeded(2)
+	n = osc.PadBytesNeeded(2)
 	if n != 2 {
 		t.Errorf("Number of pad bytes should be 2 and is: %d", n)
 	}
 
-	n = padBytesNeeded(1)
+	n = osc.PadBytesNeeded(1)
 	if n != 3 {
 		t.Errorf("Number of pad bytes should be 3 and is: %d", n)
 	}
 
-	n = padBytesNeeded(0)
+	n = osc.PadBytesNeeded(0)
 	if n != 0 {
 		t.Errorf("Number of pad bytes should be 0 and is: %d", n)
 	}
 
-	n = padBytesNeeded(5)
+	n = osc.PadBytesNeeded(5)
 	if n != 3 {
 		t.Errorf("Number of pad bytes should be 3 and is: %d", n)
 	}
 
-	n = padBytesNeeded(7)
+	n = osc.PadBytesNeeded(7)
 	if n != 1 {
 		t.Errorf("Number of pad bytes should be 1 and is: %d", n)
 	}
 
-	n = padBytesNeeded(32)
+	n = osc.PadBytesNeeded(32)
 	if n != 0 {
 		t.Errorf("Number of pad bytes should be 0 and is: %d", n)
 	}
 
-	n = padBytesNeeded(63)
+	n = osc.PadBytesNeeded(63)
 	if n != 1 {
 		t.Errorf("Number of pad bytes should be 1 and is: %d", n)
 	}
 
-	n = padBytesNeeded(10)
+	n = osc.PadBytesNeeded(10)
 	if n != 2 {
 		t.Errorf("Number of pad bytes should be 2 and is: %d", n)
 	}
@@ -80,7 +82,7 @@ func TestWritePaddedString(t *testing.T) {
 		buf := []byte{}
 		bytesBuffer := bytes.NewBuffer(buf)
 
-		n, err := writePaddedString(tt.s, bytesBuffer)
+		n, err := osc.WritePaddedString(tt.s, bytesBuffer)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
@@ -111,7 +113,7 @@ func TestReadPaddedString(t *testing.T) {
 		{[]byte{'t', 'e', 's', 't'}, 0, "", io.EOF},           // if there is no null byte at the end, it doesn't work.
 	} {
 		buf := bytes.NewBuffer(tt.buf)
-		s, n, err := readPaddedString(bufio.NewReader(buf))
+		s, n, err := osc.ReadPaddedString(bufio.NewReader(buf))
 		if got, want := err, tt.e; got != want {
 			t.Errorf("%q: Unexpected error reading padded string; got = %q, want = %q", tt.s, got, want)
 		}
@@ -137,7 +139,7 @@ func TestReadBlob(t *testing.T) {
 		{"regular value", []byte{0, 0, 0, 1, 10, 0, 0, 0}, []byte{10}, 8, false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := readBlob(bufio.NewReader(bytes.NewBuffer(tt.args)))
+			got, got1, err := osc.ReadBlob(bufio.NewReader(bytes.NewBuffer(tt.args)))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("readBlob() error = %v, wantErr %v", err, tt.wantErr)
 				return

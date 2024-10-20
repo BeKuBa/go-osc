@@ -63,15 +63,13 @@ func (msg *Message) ClearData() {
 func (msg *Message) Match(addr string) bool {
 	regex, err := getRegEx(msg.Address)
 	if err != nil {
-		if err != nil {
-			panic("regexp: Compile(msg.Address): " + err.Error())
-		}
+		panic("regexp: Compile(msg.Address): " + err.Error())
 	}
 	return regex.MatchString(addr)
 }
 
-// typeTags returns the type tag string.
-func (msg *Message) typeTags() string {
+// TypeTags returns the type tag string.
+func (msg *Message) TypeTags() string {
 	if len(msg.Arguments) == 0 {
 		return ","
 	}
@@ -93,7 +91,7 @@ func (msg *Message) String() string {
 	}
 
 	var s strings.Builder
-	tags := msg.typeTags()
+	tags := msg.TypeTags()
 	s.WriteString(fmt.Sprintf("%s %s", msg.Address, tags))
 
 	for _, arg := range msg.Arguments {
@@ -120,6 +118,8 @@ func (msg *Message) String() string {
 // 1. OSC Address Pattern
 // 2. OSC Type Tag String
 // 3. OSC Arguments.
+//
+//gocyclo:ignore
 func (msg *Message) MarshalBinary() ([]byte, error) {
 	// We can start with the OSC address and add it to the buffer
 	data := new(bytes.Buffer)
@@ -247,7 +247,7 @@ func (args ArgumentsType) arg(ix int) (result any, err error) {
 	return nil, fmt.Errorf("out of bounds")
 }
 
-// Bool Argument getter for bool value
+// Bool Argument getter
 func (args *ArgumentsType) Bool(ix int) (bool, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -261,7 +261,7 @@ func (args *ArgumentsType) Bool(ix int) (bool, error) {
 	return false, err
 }
 
-// Int32 Argument getter for bool value
+// Int32 Argument getter
 func (args *ArgumentsType) Int32(ix int) (int32, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -275,7 +275,7 @@ func (args *ArgumentsType) Int32(ix int) (int32, error) {
 	return 0, err
 }
 
-// Int64 Argument getter for bool value
+// Int64 Argument getter
 func (args *ArgumentsType) Int64(ix int) (int64, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -289,7 +289,7 @@ func (args *ArgumentsType) Int64(ix int) (int64, error) {
 	return 0, err
 }
 
-// Float32 Argument getter for bool value
+// Float32 Argument getter
 func (args *ArgumentsType) Float32(ix int) (float32, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -303,7 +303,7 @@ func (args *ArgumentsType) Float32(ix int) (float32, error) {
 	return 0.0, err
 }
 
-// Float64 Argument getter for bool value
+// Float64 Argument getter
 func (args *ArgumentsType) Float64(ix int) (float64, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -317,7 +317,7 @@ func (args *ArgumentsType) Float64(ix int) (float64, error) {
 	return 0.0, err
 }
 
-// Str Argument getter for bool value
+// Str Argument getter
 func (args *ArgumentsType) Str(ix int) (string, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -331,7 +331,7 @@ func (args *ArgumentsType) Str(ix int) (string, error) {
 	return "", err
 }
 
-// Bytes Argument getter for bool value
+// Bytes Argument getter
 func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -345,7 +345,7 @@ func (args *ArgumentsType) Bytes(ix int) ([]byte, error) {
 	return nil, err
 }
 
-// Timetag Argument getter for bool value
+// Timetag Argument getter
 func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
 	v, err := args.arg(ix)
 	if err == nil {
@@ -359,7 +359,7 @@ func (args *ArgumentsType) Timetag(ix int) (Timetag, error) {
 	return 0, err
 }
 
-// Nil Argument getter for nil value
+// Nil Argument getter
 // also nil if ix out of range
 func (args *ArgumentsType) Nil(ix int) any {
 	var dummy any = true

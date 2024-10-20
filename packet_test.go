@@ -1,17 +1,19 @@
-package osc
+package osc_test
 
 import (
 	"bufio"
 	"bytes"
 	"reflect"
 	"testing"
+
+	"github.com/bekuba/go-osc"
 )
 
 func TestParsePacket(t *testing.T) {
 	for _, tt := range []struct {
 		desc string
 		msg  string
-		pkt  Packet
+		pkt  osc.Packet
 		ok   bool
 	}{
 		{
@@ -29,7 +31,7 @@ func TestParsePacket(t *testing.T) {
 		{"empty", "", nil, false},
 	} {
 		var start int
-		pkt, err := readPacket(bufio.NewReader(bytes.NewBufferString(tt.msg)), &start, len(tt.msg))
+		pkt, err := osc.ReadPacket(bufio.NewReader(bytes.NewBufferString(tt.msg)), &start, len(tt.msg))
 		if err != nil && tt.ok {
 			t.Errorf("%s: readPacket() returned unexpected error; %s", tt.desc, err)
 		}
@@ -58,8 +60,8 @@ func TestParsePacket(t *testing.T) {
 }
 
 // makePacket creates a fake Message Packet.
-func makePacket(addr string, args []string) Packet {
-	msg := NewMessage(addr)
+func makePacket(addr string, args []string) osc.Packet {
+	msg := osc.NewMessage(addr)
 	for _, arg := range args {
 		msg.Append(arg)
 	}

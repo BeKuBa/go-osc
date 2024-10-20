@@ -4,18 +4,24 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/crgimenes/go-osc"
+	"github.com/bekuba/go-osc"
 )
 
-// TODO: Revise the client!
 func main() {
-	ip := "localhost"
-	port := 8765
-	client := osc.NewClient(ip, port)
+
+	addr1 := "localhost:0"
+	addr2 := "localhost:8765"
+
+	client, err := osc.NewServerAndClient(addr1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
 
 	fmt.Println("### Welcome to go-osc transmitter demo")
 	fmt.Println("Please, select the OSC packet type you would like to send:")
@@ -43,7 +49,7 @@ func main() {
 			message.Append("teststring")
 			message.Append(true)
 			message.Append(false)
-			client.Send(message)
+			client.SendTo(addr1, message)
 		} else if sline == "b" {
 			bundle := osc.NewBundle(time.Now())
 			message1 := osc.NewMessage("/bundle/message/1")
@@ -59,7 +65,7 @@ func main() {
 			message2.Append(true)
 			bundle.Append(message1)
 			bundle.Append(message2)
-			client.Send(bundle)
+			client.SendTo(addr2, bundle)
 		} else if sline == "q" {
 			fmt.Println("Exit!")
 			os.Exit(0)

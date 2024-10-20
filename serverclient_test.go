@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crgimenes/go-osc"
+	"github.com/bekuba/go-osc"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,6 +14,42 @@ const (
 	ping = "/ping"
 	pong = "/pong"
 )
+
+func TestListenAndServe(t *testing.T) {
+	done := sync.WaitGroup{}
+	done.Add(2)
+
+	addr := "127.0.0.1:8765"
+
+	server, err := osc.NewServerAndClient(addr)
+	assert.NoError(t, err)
+	defer server.Close()
+
+	dispatcher := osc.NewStandardDispatcher()
+	dispatcher.AddMsgHandler("/osc/address", func(msg *osc.Message) {
+		assert.Equal(t, "/osc/address", msg.Address)
+		assert.Equal(t, 3, len(msg.Arguments))
+		assert.Equal(t, int32(111), msg.Arguments[0].(int32))
+		assert.Equal(t, true, msg.Arguments[1].(bool))
+		assert.Equal(t, "hello", msg.Arguments[2].(string))
+
+		done.Done()
+	})
+	go server.ListenAndServe(dispatcher)
+
+	go func() {
+		client, err := osc.NewServerAndClient("localhost:0")
+		assert.NoError(t, err)
+		defer client.Close()
+
+		msg := osc.NewMessage("/osc/address", int32(111), true, "hello")
+		client.SendTo("localhost:8765", msg)
+
+		done.Done()
+	}()
+
+	done.Wait()
+}
 
 func TestServerAndClient(t *testing.T) {
 
@@ -55,27 +91,19 @@ func TestServerAndClient(t *testing.T) {
 		var cArray []byte = []byte{10, 48}
 		const cTimetag osc.Timetag = 16818286200017484014
 
-		addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
-		assert.NoError(t, err)
-
-		addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
-		assert.NoError(t, err)
+		addr1 := "127.0.0.1:8000"
+		addr2 := "127.0.0.1:9000"
 
 		// app1
-		d1 := osc.NewStandardDispatcher()
-		app1 := osc.NewServerAndClient(d1)
-		err = app1.NewConn(addr1, addr2)
+		app1, err := osc.NewServerAndClient(addr1)
 		assert.NoError(t, err)
+		defer app1.Close()
 
-		defer func() {
-			err := app1.Close()
-			assert.NoError(t, err)
-		}()
-
+		d1 := osc.NewStandardDispatcher()
 		err = d1.AddMsgHandler(ping, func(msg *osc.Message) {
 			pingF64 = msg.Arguments[0].(float64)
 
-			err = app1.SendMsg(pong, cBoolTrue, cBoolFalse, cI32, cI64, cF32, cF64, cStrTest, cStrEmpty, cI, nil, cArray, cTimetag)
+			err = app1.SendMsgTo(addr2, pong, cBoolTrue, cBoolFalse, cI32, cI64, cF32, cF64, cStrTest, cStrEmpty, cI, nil, cArray, cTimetag)
 
 			assert.NoError(t, err)
 		})
@@ -83,18 +111,19 @@ func TestServerAndClient(t *testing.T) {
 		assert.NoError(t, err)
 
 		go func() {
-			err := app1.ListenAndServe()
+			err := app1.ListenAndServe(d1)
 			assert.NoError(t, err)
 		}()
 
 		// app2
+		app2, err := osc.NewServerAndClient(addr2)
+		assert.NoError(t, err)
+		defer app2.Close()
+
 		d2 := osc.NewStandardDispatcher()
 		err = d2.AddMsgHandlerExt(pong, func(msg *osc.Message, raddr net.Addr) {
 
-			ip1 := addr1.String()
-			ip2 := raddr.String()
-
-			if ip1 == ip2 {
+			if addr1 == raddr.String() {
 				boolTrue = msg.Arguments[0].(bool)
 				boolFalse = msg.Arguments[1].(bool)
 				i32 = msg.Arguments[2].(int32)
@@ -112,24 +141,16 @@ func TestServerAndClient(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		app2 := osc.NewServerAndClient(d2)
-		err = app2.NewConn(addr2, addr1)
-		assert.NoError(t, err)
-		defer func() {
-			err := app2.Close()
-			assert.NoError(t, err)
-		}()
 		go func() {
-			err := app2.ListenAndServe()
+			err := app2.ListenAndServe(d2)
 			assert.NoError(t, err)
 		}()
 
 		// app2 send ping, app1 send pong, app3 send pong
-		err = app2.SendMsg(ping, 1.0)
+		err = app2.SendMsgTo(addr1, ping, 1.0)
 		assert.NoError(t, err)
 
-		app3 := osc.NewServerAndClient(nil)
-		err = app3.NewConn(nil, nil)
+		app3, err := osc.NewServerAndClient(":0")
 		assert.NoError(t, err)
 
 		err = app3.SendMsgTo(addr2, pong, 2)
@@ -165,23 +186,15 @@ func TestServerAndClient(t *testing.T) {
 
 func TestReadTimeout(t *testing.T) {
 
-	addr1, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
-	assert.NoError(t, err)
-
-	addr2, err := net.ResolveUDPAddr("udp", "127.0.0.1:9000")
-	assert.NoError(t, err)
+	addr1 := "127.0.0.1:8000"
+	addr2 := "127.0.0.1:9000"
 
 	// app1
 	d1 := osc.NewStandardDispatcher()
-	app1 := osc.NewServerAndClient(nil)
-	err = app1.NewConn(addr1, addr2)
+	app1, err := osc.NewServerAndClient(addr1)
 	assert.NoError(t, err)
-	app1.Server().ReadTimeout = 100 * time.Millisecond
-
-	defer func() {
-		err := app1.Close()
-		assert.NoError(t, err)
-	}()
+	app1.Conn().SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	defer app1.Close()
 
 	get := false
 	err = d1.AddMsgHandler(ping, func(msg *osc.Message) {
@@ -191,15 +204,9 @@ func TestReadTimeout(t *testing.T) {
 	assert.NoError(t, err)
 
 	// app2
-	app2 := osc.NewServerAndClient(nil)
-	err = app2.NewConn(addr2, addr1)
+	app2, err := osc.NewServerAndClient(addr2)
 	assert.NoError(t, err)
-	defer func() {
-		err := app2.Close()
-		assert.NoError(t, err)
-	}()
-
-	app1.Server().ReadTimeout = 100 * time.Millisecond
+	defer app2.Close()
 
 	// In time
 	wait := sync.WaitGroup{}
@@ -207,7 +214,7 @@ func TestReadTimeout(t *testing.T) {
 
 	go func() {
 
-		p, addr, err := app1.Server().Read(app1.Conn())
+		p, addr, err := app1.Read()
 		assert.NoError(t, err)
 		if err == nil {
 			d1.Dispatch(p, addr)
@@ -217,7 +224,7 @@ func TestReadTimeout(t *testing.T) {
 	}()
 	time.Sleep(50 * time.Millisecond)
 	// app2 send ping
-	err = app2.SendMsg(ping)
+	err = app2.SendMsgTo(addr1, ping)
 	assert.NoError(t, err)
 
 	wait.Wait()
@@ -230,7 +237,7 @@ func TestReadTimeout(t *testing.T) {
 
 	go func() {
 
-		p, addr, err := app1.Server().Read(app1.Conn())
+		p, addr, err := app1.Read()
 		assert.Error(t, err)
 		if err == nil {
 			d1.Dispatch(p, addr)
@@ -240,7 +247,7 @@ func TestReadTimeout(t *testing.T) {
 	}()
 	time.Sleep(150 * time.Millisecond)
 	// app2 send ping
-	err = app2.SendMsg(ping)
+	err = app2.SendMsgTo(addr1, ping)
 	assert.NoError(t, err)
 
 	wait.Wait()

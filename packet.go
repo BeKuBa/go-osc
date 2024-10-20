@@ -111,6 +111,8 @@ func readMessage(reader *bufio.Reader, start *int) (*Message, error) {
 }
 
 // readArguments from `reader` and add them to the OSC message `msg`.
+//
+//gocyclo:ignore
 func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 	// Read the type tag string
 	var n int

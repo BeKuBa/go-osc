@@ -29,7 +29,7 @@ func NewTimetagFromTime(timeStamp time.Time) Timetag {
 }
 
 // NewImmediateTimetag creates an OSC Time Tag with only the least significant bit set.
-// The time tag value consisting of 63 zero bits followed by a one in the least signifigant bit is a special case meaning “immediately.”
+// The time tag value consisting of 63 zero bits followed by a one in the least significant bit is a special case meaning “immediately.”
 func NewImmediateTimetag() Timetag {
 	return Timetag(1)
 }

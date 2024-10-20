@@ -1,39 +1,41 @@
 package osc
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"math"
 	"net"
+	"sync"
+	"time"
 )
 
 // ServerAndClient structure
 type ServerAndClient struct {
-	conn   *net.UDPConn
-	RAddr  *net.UDPAddr // default remote adr (for Send and SendMsg)
-	server *Server
+	conn *net.UDPConn
+	//	Dispatcher  Dispatcher
+	ReadTimeout time.Duration
 }
 
-// NewServerAndClient create a new ServerandClient
-func NewServerAndClient(dispatcher Dispatcher) *ServerAndClient {
-	return &ServerAndClient{server: &Server{Dispatcher: dispatcher}}
-}
+// NewServerAndClient create a new Server and Client connection
+func NewServerAndClient(laddr string) (*ServerAndClient, error) {
 
-// NewConn create a new UDP Connection for Server and Client
-func (sc *ServerAndClient) NewConn(laddr *net.UDPAddr, raddr *net.UDPAddr) error {
-	conn, err := net.ListenUDP("udp", laddr)
+	addr, err := net.ResolveUDPAddr("udp", laddr)
 	if err != nil {
-		return err
+		return nil, ErrorOscAddressFormat
+	}
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return nil, ErrorOscAddress
 	}
 
-	sc.conn = conn
-	sc.RAddr = raddr
-
-	return err
+	return &ServerAndClient{conn: conn}, nil
 }
 
-// SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given address.
-func (sc *ServerAndClient) SendTo(raddr net.Addr, packet Packet) (err error) {
+// SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given UDP address.
+func (sc *ServerAndClient) SendToUDPAddr(raddr *net.UDPAddr, packet Packet) (err error) {
 	if sc.conn != nil {
+
 		data, err := packet.MarshalBinary()
 		if err != nil {
 			return err
@@ -42,20 +44,24 @@ func (sc *ServerAndClient) SendTo(raddr net.Addr, packet Packet) (err error) {
 			return err
 		}
 	} else {
-		return fmt.Errorf("can't send OSC packet! %s", err.Error())
+		return fmt.Errorf("can't send OSC packet! %s", err)
 	}
 	return err
 }
 
-// Send sends an OSC Bundle or an OSC Message (as OSC Client).
-func (sc *ServerAndClient) Send(packet Packet) error {
-	return sc.SendTo(sc.RAddr, packet)
+// SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given address.
+func (sc *ServerAndClient) SendTo(raddr string, packet Packet) (err error) {
+	addr, err := net.ResolveUDPAddr("udp", raddr)
+	if err != nil {
+		return ErrorOscAddressFormat
+	}
+	return sc.SendToUDPAddr(addr, packet)
 }
 
-// SendMsgTo sends a OSC Message to a given address(all int types converted to int32)
+// SendMsgTo sends a OSC Message to a given UDP address(all int types converted to int32)
 // Default int is int32, include int values in range of int32
 // If you need a int value in range of int64 convert the arg to int64
-func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) error {
+func (sc *ServerAndClient) SendMsgToUDPAddr(addr *net.UDPAddr, path string, args ...any) error {
 	var a []any
 
 	for _, arg := range args {
@@ -82,24 +88,25 @@ func (sc *ServerAndClient) SendMsgTo(addr net.Addr, path string, args ...any) er
 
 	}
 
-	return sc.SendTo(addr, NewMessage(path, a...))
+	return sc.SendToUDPAddr(addr, NewMessage(path, a...))
 }
 
-// SendMsg sends a OSC Message to a given address(all int types converted to int32)
+// SendMsgTo sends a OSC Message to a given address(all int types converted to int32)
 // Default int is int32, include int values in range of int32
 // If you need a int value in range of int64 convert the arg to int64
-func (sc *ServerAndClient) SendMsg(path string, args ...any) error {
-	return sc.SendMsgTo(sc.RAddr, path, args...)
+func (sc *ServerAndClient) SendMsgTo(raddr string, path string, args ...any) error {
+	addr, err := net.ResolveUDPAddr("udp", raddr)
+	if err != nil {
+		return ErrorOscAddressFormat
+	}
+	return sc.SendMsgToUDPAddr(addr, path, args...)
 }
 
 // ListenAndServe listen and serve as an OSC Server
-func (sc *ServerAndClient) ListenAndServe() error {
+func (sc *ServerAndClient) ListenAndServe(d Dispatcher) error {
 	if sc.conn != nil {
-		if sc.server.Dispatcher == nil {
-			sc.server.Dispatcher = NewStandardDispatcher()
-		}
 
-		err := sc.server.serve(sc.conn)
+		err := sc.serve(sc.conn, d)
 
 		// serve is a go routine with a loop that only ends on error
 		// so can now sc.conn (e.g. after close connection)  maybe nil
@@ -112,23 +119,71 @@ func (sc *ServerAndClient) ListenAndServe() error {
 	return fmt.Errorf("ServerAndClient connection is not created")
 }
 
-// Close close ServerAndClient connection
-func (sc *ServerAndClient) Close() error {
-	conn := sc.conn
-	// for handle return server.serve error
-	sc.conn = nil
+/* ************************************** */
 
-	err := conn.Close()
+// Serve retrieves incoming OSC packets from the given connection and dispatches
+// retrieved OSC packets. If something goes wrong an error is returned.
+func (sc *ServerAndClient) serve(c net.PacketConn, d Dispatcher) error {
+	tempDelay := 25 + time.Millisecond
 
-	return err
+	for {
+		if c == nil {
+			return nil
+		}
+		msg, raddr, err := sc.Read()
+		if err != nil {
+			ne, ok := err.(net.Error)
+
+			if ok && ne.Temporary() {
+				time.Sleep(tempDelay)
+				continue
+			}
+
+			return err
+		}
+		if d != nil {
+			errChan := make(chan error)
+			go func() {
+				errChan <- d.Dispatch(msg, raddr)
+			}()
+			if err := <-errChan; err != nil {
+				return err
+			}
+		}
+	}
 }
 
-// Conn ServerAndClient conn
+// Read retrieves OSC packets.
+func (s *ServerAndClient) Read() (Packet, net.Addr, error) {
+	if s.ReadTimeout != 0 {
+		err := s.conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	data := make([]byte, 65535)
+
+	n, addr, err := s.conn.ReadFrom(data)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var start int
+	p, err := readPacket(bufio.NewReader(bytes.NewBuffer(data)), &start, n)
+
+	return p, addr, err
+}
+
+func (sc *ServerAndClient) Close() {
+	done := sync.WaitGroup{}
+	done.Add(1)
+	c := sc.conn
+	sc.conn = nil
+	done.Done()
+	c.Close()
+}
+
 func (sc *ServerAndClient) Conn() *net.UDPConn {
 	return sc.conn
-}
-
-// Server ServerAndClient conn
-func (sc *ServerAndClient) Server() *Server {
-	return sc.server
 }

@@ -1,4 +1,4 @@
-module github.com/crgimenes/go-osc
+module github.com/bekuba/go-osc
 
 go 1.22
 

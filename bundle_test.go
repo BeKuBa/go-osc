@@ -1,4 +1,4 @@
-package osc
+package osc_test
 
 import (
 	"bufio"
@@ -6,15 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bekuba/go-osc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBundle(t *testing.T) {
-	bundle := NewBundle(time.Now())
+	bundle := osc.NewBundle(time.Now())
 
-	err := bundle.Append(NewMessage("/a", "test"))
+	err := bundle.Append(osc.NewMessage("/a", "test"))
 	assert.Nil(t, err)
-	err = bundle.Append(NewMessage("/b", "test2"))
+	err = bundle.Append(osc.NewMessage("/b", "test2"))
 	assert.Nil(t, err)
 
 	d, err := bundle.MarshalBinary()
@@ -23,7 +24,7 @@ func TestBundle(t *testing.T) {
 	t.Run("should read bundle without padding", func(t *testing.T) {
 		io := bufio.NewReader(bytes.NewReader(d))
 		start := 0
-		b, err := readBundle(io, &start, len(d))
+		b, err := osc.ReadBundle(io, &start, len(d))
 
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(b.Messages))
@@ -35,7 +36,7 @@ func TestBundle(t *testing.T) {
 
 		io := bufio.NewReader(bytes.NewReader(d1))
 		start := 0
-		b, err := readBundle(io, &start, len(d1))
+		b, err := osc.ReadBundle(io, &start, len(d1))
 
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(b.Messages))
@@ -47,7 +48,7 @@ func TestBundle(t *testing.T) {
 
 		io := bufio.NewReader(bytes.NewReader(d1))
 		start := 0
-		b, err := readBundle(io, &start, len(d1))
+		b, err := osc.ReadBundle(io, &start, len(d1))
 
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(b.Messages))
@@ -59,7 +60,7 @@ func TestBundle(t *testing.T) {
 
 		io := bufio.NewReader(bytes.NewReader(d1))
 		start := 0
-		_, err := readBundle(io, &start, len(d1))
+		_, err := osc.ReadBundle(io, &start, len(d1))
 
 		assert.NotNil(t, err)
 	})

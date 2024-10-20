@@ -3,20 +3,21 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"net"
+	"log"
 	"os"
 
-	"github.com/crgimenes/go-osc"
+	"github.com/bekuba/go-osc"
 )
 
 func main() {
-	addr := "127.0.0.1:8765"
-	server := &osc.Server{}
-	conn, err := net.ListenPacket("udp", addr)
+
+	addr := "localhost:8765"
+
+	server, err := osc.NewServerAndClient(addr)
 	if err != nil {
-		fmt.Println("Couldn't listen: ", err)
+		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer server.Close()
 
 	fmt.Println("### Welcome to go-osc receiver demo")
 	fmt.Println("Press \"q\" to exit")
@@ -25,7 +26,7 @@ func main() {
 		fmt.Println("Start listening on", addr)
 
 		for {
-			packet, _, err := server.Read(conn)
+			packet, _, err := server.Read()
 			if err != nil {
 				fmt.Println("Server error: " + err.Error())
 				os.Exit(1)
