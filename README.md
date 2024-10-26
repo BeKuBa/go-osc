@@ -1,6 +1,5 @@
 # GoOSC
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bekuba/go-osc)](https://goreportcard.com/report/github.com/bekuba/go-osc)
 
 [Open Sound Control (OSC)](https://opensoundcontrol.stanford.edu) library for Golang. Implemented in pure Go.
 

@@ -6,7 +6,7 @@ import (
 )
 
 // helper for test of private functions
-// (Test should be use for public functions. But sometimes private functions are usefull)
+// (Test should be use for public functions. But sometimes private functions are useful)
 
 func PadBytesNeeded(elementLen int) int {
 	return padBytesNeeded(elementLen)

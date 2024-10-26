@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
+
 	"github.com/stretchr/testify/assert"
 )
 

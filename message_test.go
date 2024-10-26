@@ -3,7 +3,8 @@ package osc_test
 import (
 	"testing"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -180,9 +181,9 @@ func TestArgumentGetter(t *testing.T) {
 	var vString string
 	var vTimetag osc.Timetag
 	var vBytes []byte
-	var vTrue = false
-	var vFalse = true
-	var vNil any = true // true as dummy for not nil
+	var vTrue bool
+	var vFalse bool
+	var vNil any // true as dummy for not nil
 
 	msg := osc.NewMessage("/argtest", cInt32, cInt64, cFloat32, cFloat64, cString, cTimetag, cBytes, true, false, nil)
 

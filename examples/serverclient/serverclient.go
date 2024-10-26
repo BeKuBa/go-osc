@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
 )
 
 func main() {

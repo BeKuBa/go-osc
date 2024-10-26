@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
 )
 
 const (

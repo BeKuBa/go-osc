@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
 )
 
 func TestPadBytesNeeded(t *testing.T) {
@@ -84,7 +84,7 @@ func TestWritePaddedString(t *testing.T) {
 
 		n, err := osc.WritePaddedString(tt.s, bytesBuffer)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 		if got, want := n, tt.n; got != want {
 			t.Errorf("%q: Count of bytes written don't match; got = %d, want = %d", tt.s, got, want)

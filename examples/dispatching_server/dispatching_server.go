@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
 )
 
 func main() {

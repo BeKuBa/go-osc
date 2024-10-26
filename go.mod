@@ -1,8 +1,10 @@
-module github.com/bekuba/go-osc
+module bekuba/go-osc
 
-go 1.22
+go 1.23
 
-require github.com/stretchr/testify v1.8.4
+toolchain go1.23.2
+
+require github.com/stretchr/testify v1.9.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

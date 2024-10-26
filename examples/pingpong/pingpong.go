@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/bekuba/go-osc"
+	"bekuba/go-osc"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	d1 := osc.NewStandardDispatcher()
 	err = d1.AddMsgHandlerExt("*", func(msg *osc.Message, addr net.Addr) {
 		fmt.Printf("%v -> %v: %v \n", addr, addr2, msg)
-		err = app1.SendMsgTo(addr1, "/pong", 2)
+		err = app1.SendMsgTo(addr.String(), "/pong", 2)
 		if err != nil {
 			fmt.Println(err)
 		}

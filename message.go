@@ -118,8 +118,6 @@ func (msg *Message) String() string {
 // 1. OSC Address Pattern
 // 2. OSC Type Tag String
 // 3. OSC Arguments.
-//
-//gocyclo:ignore
 func (msg *Message) MarshalBinary() ([]byte, error) {
 	// We can start with the OSC address and add it to the buffer
 	data := new(bytes.Buffer)
