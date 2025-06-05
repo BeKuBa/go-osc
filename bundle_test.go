@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 
 	"github.com/stretchr/testify/assert"
 )

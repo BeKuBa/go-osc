@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func TestPadBytesNeeded(t *testing.T) {

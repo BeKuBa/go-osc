@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-// ServerAndClient structure
-type ServerAndClient struct {
+// Node structure
+type Node struct {
 	conn *net.UDPConn
 	//	Dispatcher  Dispatcher
 	ReadTimeout time.Duration
 }
 
-// NewServerAndClient create a new Server and Client connection
-func NewServerAndClient(laddr string) (*ServerAndClient, error) {
+// Node create a new OSC Server and/or Client connection
+func NewNode(laddr string) (*Node, error) {
 
 	addr, err := net.ResolveUDPAddr("udp", laddr)
 	if err != nil {
@@ -29,11 +29,11 @@ func NewServerAndClient(laddr string) (*ServerAndClient, error) {
 		return nil, ErrorOscAddress
 	}
 
-	return &ServerAndClient{conn: conn}, nil
+	return &Node{conn: conn}, nil
 }
 
 // SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given UDP address.
-func (sc *ServerAndClient) SendToUDPAddr(raddr *net.UDPAddr, packet Packet) (err error) {
+func (sc *Node) SendToUDPAddr(raddr *net.UDPAddr, packet Packet) (err error) {
 	if sc.conn != nil {
 
 		data, err := packet.MarshalBinary()
@@ -50,7 +50,7 @@ func (sc *ServerAndClient) SendToUDPAddr(raddr *net.UDPAddr, packet Packet) (err
 }
 
 // SendTo sends an OSC Bundle or an OSC Message (as OSC Client) to a given address.
-func (sc *ServerAndClient) SendTo(raddr string, packet Packet) (err error) {
+func (sc *Node) SendTo(raddr string, packet Packet) (err error) {
 	addr, err := net.ResolveUDPAddr("udp", raddr)
 	if err != nil {
 		return ErrorOscAddressFormat
@@ -61,7 +61,7 @@ func (sc *ServerAndClient) SendTo(raddr string, packet Packet) (err error) {
 // SendMsgTo sends a OSC Message to a given UDP address(all int types converted to int32)
 // Default int is int32, include int values in range of int32
 // If you need a int value in range of int64 convert the arg to int64
-func (sc *ServerAndClient) SendMsgToUDPAddr(addr *net.UDPAddr, path string, args ...any) error {
+func (sc *Node) SendMsgToUDPAddr(addr *net.UDPAddr, path string, args ...any) error {
 	var a []any
 
 	for _, arg := range args {
@@ -94,7 +94,7 @@ func (sc *ServerAndClient) SendMsgToUDPAddr(addr *net.UDPAddr, path string, args
 // SendMsgTo sends a OSC Message to a given address(all int types converted to int32)
 // Default int is int32, include int values in range of int32
 // If you need a int value in range of int64 convert the arg to int64
-func (sc *ServerAndClient) SendMsgTo(raddr string, path string, args ...any) error {
+func (sc *Node) SendMsgTo(raddr string, path string, args ...any) error {
 	addr, err := net.ResolveUDPAddr("udp", raddr)
 	if err != nil {
 		return ErrorOscAddressFormat
@@ -103,7 +103,7 @@ func (sc *ServerAndClient) SendMsgTo(raddr string, path string, args ...any) err
 }
 
 // ListenAndServe listen and serve as an OSC Server
-func (sc *ServerAndClient) ListenAndServe(d Dispatcher) error {
+func (sc *Node) ListenAndServe(d Dispatcher) error {
 	if sc.conn != nil {
 
 		err := sc.serve(sc.conn, d)
@@ -123,7 +123,7 @@ func (sc *ServerAndClient) ListenAndServe(d Dispatcher) error {
 
 // Serve retrieves incoming OSC packets from the given connection and dispatches
 // retrieved OSC packets. If something goes wrong an error is returned.
-func (sc *ServerAndClient) serve(c net.PacketConn, d Dispatcher) error {
+func (sc *Node) serve(c net.PacketConn, d Dispatcher) error {
 	tempDelay := 25 + time.Millisecond
 
 	for {
@@ -154,7 +154,7 @@ func (sc *ServerAndClient) serve(c net.PacketConn, d Dispatcher) error {
 }
 
 // Read retrieves OSC packets.
-func (s *ServerAndClient) Read() (Packet, net.Addr, error) {
+func (s *Node) Read() (Packet, net.Addr, error) {
 	if s.ReadTimeout != 0 {
 		err := s.conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
 		if err != nil {
@@ -175,7 +175,7 @@ func (s *ServerAndClient) Read() (Packet, net.Addr, error) {
 	return p, addr, err
 }
 
-func (sc *ServerAndClient) Close() {
+func (sc *Node) Close() {
 	done := sync.WaitGroup{}
 	done.Add(1)
 	c := sc.conn
@@ -184,6 +184,6 @@ func (sc *ServerAndClient) Close() {
 	c.Close()
 }
 
-func (sc *ServerAndClient) Conn() *net.UDPConn {
+func (sc *Node) Conn() *net.UDPConn {
 	return sc.conn
 }

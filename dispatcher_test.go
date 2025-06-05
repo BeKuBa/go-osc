@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 
 	"github.com/stretchr/testify/assert"
 )
 
 // Open question: is this desired behavior, or should server.serve return
 // successfully in cases where it would otherwise throw this error?
-func serveUntilInterrupted(server *osc.ServerAndClient) error {
+func serveUntilInterrupted(server *osc.Node) error {
 	if err := server.ListenAndServe(nil); err != nil &&
 		!strings.Contains(err.Error(), "use of closed network connection") {
 		return err
@@ -193,7 +193,7 @@ func TestServerMessageDispatching(t *testing.T) {
 
 	addr := fmt.Sprintf("localhost:%v", port)
 
-	server, err := osc.NewServerAndClient(addr)
+	server, err := osc.NewNode(addr)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -236,7 +236,7 @@ func TestServerMessageDispatching(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 
 			addr1 := "localhost:0"
-			client, err := osc.NewServerAndClient(addr1)
+			client, err := osc.NewNode(addr1)
 			if err != nil {
 				fmt.Println(err)
 			}

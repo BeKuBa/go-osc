@@ -58,16 +58,6 @@ func (msg *Message) ClearData() {
 	msg.Arguments = msg.Arguments[len(msg.Arguments):]
 }
 
-// Match returns true, if the OSC address pattern of the OSC Message matches the given
-// address. The match is case sensitive!
-func (msg *Message) Match(addr string) bool {
-	regex, err := getRegEx(msg.Address)
-	if err != nil {
-		panic("regexp: Compile(msg.Address): " + err.Error())
-	}
-	return regex.MatchString(addr)
-}
-
 // TypeTags returns the type tag string.
 func (msg *Message) TypeTags() string {
 	if len(msg.Arguments) == 0 {

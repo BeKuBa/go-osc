@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 const (
@@ -23,7 +23,7 @@ func main() {
 
 	addr := fmt.Sprintf("%v:%v", xrIP, xr18Port)
 
-	app, err := osc.NewServerAndClient(":0")
+	app, err := osc.NewNode(":0")
 	if err != nil {
 		fmt.Println(err)
 	}

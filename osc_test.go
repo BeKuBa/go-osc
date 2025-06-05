@@ -31,3 +31,11 @@ func ReadPacket(reader *bufio.Reader, start *int, end int) (Packet, error) {
 func ReadBundle(reader *bufio.Reader, start *int, end int) (*Bundle, error) {
 	return readBundle(reader, start, end)
 }
+
+func (msg *Message) Match(addr string) (bool, error) {
+	regex, err := getRegEx(msg.Address)
+	if err != nil {
+		return false, err
+	}
+	return regex.MatchString(addr), nil
+}

@@ -173,7 +173,6 @@ func readArguments(msg *Message, reader *bufio.Reader, start *int) error {
 			msg.Append(d)
 
 		case 's': // string
-			// TODO: fix reading string value
 			var s string
 			s, _, err = readPaddedString(reader)
 			if err != nil {

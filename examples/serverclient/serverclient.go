@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	// OSC app 1 with AddMsgHandlerExt
 
-	app1, err := osc.NewServerAndClient(addr2)
+	app1, err := osc.NewNode(addr2)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func main() {
 		done.Done()
 	})
 
-	app2, err := osc.NewServerAndClient(addr1)
+	app2, err := osc.NewNode(addr1)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	addr1 := "localhost:0"
 	addr2 := "localhost:8765"
 
-	client, err := osc.NewServerAndClient(addr1)
+	client, err := osc.NewNode(addr1)
 	if err != nil {
 		log.Fatal(err)
 	}

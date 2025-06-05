@@ -58,6 +58,9 @@ func NewStandardDispatcher() *StandardDispatcher {
 func (s *StandardDispatcher) AddMsgHandlerExt(addr string, handler HandlerFuncExt) error {
 
 	if addr == "*" {
+		if s.defaultHandler != nil {
+			return ErrorOscAddressExists
+		}
 		s.defaultHandler = handler
 		return nil
 	}
@@ -86,14 +89,17 @@ func (s *StandardDispatcher) AddMsgHandler(addr string, handler HandlerFunc) err
 func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) (err error) {
 	switch p := packet.(type) {
 	case *Message:
-		regex, err := getRegEx(p.Address)
-		if err != nil {
-			return err
-		}
+		if len(s.handlers) > 0 {
 
-		for addr, handler := range s.handlers {
-			if regex.MatchString(addr) {
-				handler.HandleMessage(p, raddr)
+			regex, err := getRegEx(p.Address)
+			if err != nil {
+				return err
+			}
+
+			for addr, handler := range s.handlers {
+				if regex.MatchString(addr) {
+					handler.HandleMessage(p, raddr)
+				}
 			}
 		}
 
@@ -109,20 +115,24 @@ func (s *StandardDispatcher) Dispatch(packet Packet, raddr net.Addr) (err error)
 			<-timer.C
 
 			for _, message := range p.Messages {
-				regex, err := getRegEx(message.Address)
-				if err != nil {
-					errChan <- err
-					return
-				}
-				for address, handler := range s.handlers {
-					if regex.MatchString(address) {
-						handler.HandleMessage(message, raddr)
+
+				if len(s.handlers) > 0 {
+					regex, err := getRegEx(message.Address)
+					if err != nil {
+						errChan <- err
+						return
+					}
+					for address, handler := range s.handlers {
+						if regex.MatchString(address) {
+							handler.HandleMessage(message, raddr)
+						}
 					}
 				}
 
 				if s.defaultHandler != nil {
 					s.defaultHandler.HandleMessage(message, raddr)
 				}
+
 			}
 
 			// Process all bundles

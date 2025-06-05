@@ -6,14 +6,14 @@ import (
 	"log"
 	"os"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func main() {
 
 	addr := "localhost:8765"
 
-	server, err := osc.NewServerAndClient(addr)
+	server, err := osc.NewNode(addr)
 	if err != nil {
 		log.Fatal(err)
 	}

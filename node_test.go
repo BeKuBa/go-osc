@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -20,14 +20,15 @@ func TestListenAndServe(t *testing.T) {
 	done := sync.WaitGroup{}
 	done.Add(2)
 
-	addr := "127.0.0.1:8765"
+	addr := "127.0.0.1:0"
 
-	server, err := osc.NewServerAndClient(addr)
+	server, err := osc.NewNode(addr)
 	assert.NoError(t, err)
+	addr = server.Conn().LocalAddr().String()
 	defer server.Close()
 
 	dispatcher := osc.NewStandardDispatcher()
-	dispatcher.AddMsgHandler("/osc/address", func(msg *osc.Message) {
+	err = dispatcher.AddMsgHandler("/osc/address", func(msg *osc.Message) {
 		assert.Equal(t, "/osc/address", msg.Address)
 		assert.Equal(t, 3, len(msg.Arguments))
 		assert.Equal(t, int32(111), msg.Arguments[0].(int32))
@@ -36,15 +37,19 @@ func TestListenAndServe(t *testing.T) {
 
 		done.Done()
 	})
-	go server.ListenAndServe(dispatcher)
+	assert.NoError(t, err)
+	go func() {
+		err := server.ListenAndServe(dispatcher)
+		assert.NoError(t, err)
+	}()
 
 	go func() {
-		client, err := osc.NewServerAndClient("localhost:0")
+		client, err := osc.NewNode("localhost:0")
 		assert.NoError(t, err)
 		defer client.Close()
 
 		msg := osc.NewMessage("/osc/address", int32(111), true, "hello")
-		client.SendTo("localhost:8765", msg)
+		client.SendTo(addr, msg)
 
 		done.Done()
 	}()
@@ -92,12 +97,13 @@ func TestServerAndClient(t *testing.T) {
 		var cArray []byte = []byte{10, 48}
 		const cTimetag osc.Timetag = 16818286200017484014
 
-		addr1 := "127.0.0.1:8000"
-		addr2 := "127.0.0.1:9000"
+		addr1 := "127.0.0.1:0"
+		addr2 := "127.0.0.1:0"
 
 		// app1
-		app1, err := osc.NewServerAndClient(addr1)
+		app1, err := osc.NewNode(addr1)
 		assert.NoError(t, err)
+		addr1 = app1.Conn().LocalAddr().String()
 		defer app1.Close()
 
 		d1 := osc.NewStandardDispatcher()
@@ -117,8 +123,9 @@ func TestServerAndClient(t *testing.T) {
 		}()
 
 		// app2
-		app2, err := osc.NewServerAndClient(addr2)
+		app2, err := osc.NewNode(addr2)
 		assert.NoError(t, err)
+		addr2 = app2.Conn().LocalAddr().String()
 		defer app2.Close()
 
 		d2 := osc.NewStandardDispatcher()
@@ -151,7 +158,7 @@ func TestServerAndClient(t *testing.T) {
 		err = app2.SendMsgTo(addr1, ping, 1.0)
 		assert.NoError(t, err)
 
-		app3, err := osc.NewServerAndClient(":0")
+		app3, err := osc.NewNode(":0")
 		assert.NoError(t, err)
 
 		err = app3.SendMsgTo(addr2, pong, 2)
@@ -187,13 +194,14 @@ func TestServerAndClient(t *testing.T) {
 
 func TestReadTimeout(t *testing.T) {
 
-	addr1 := "127.0.0.1:8000"
-	addr2 := "127.0.0.1:9000"
+	addr1 := "127.0.0.1:0"
+	addr2 := "127.0.0.1:0"
 
 	// app1
 	d1 := osc.NewStandardDispatcher()
-	app1, err := osc.NewServerAndClient(addr1)
+	app1, err := osc.NewNode(addr1)
 	assert.NoError(t, err)
+	addr1 = app1.Conn().LocalAddr().String()
 	app1.Conn().SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	defer app1.Close()
 
@@ -205,8 +213,9 @@ func TestReadTimeout(t *testing.T) {
 	assert.NoError(t, err)
 
 	// app2
-	app2, err := osc.NewServerAndClient(addr2)
+	app2, err := osc.NewNode(addr2)
 	assert.NoError(t, err)
+	addr2 = app2.Conn().LocalAddr().String()
 	defer app2.Close()
 
 	// In time

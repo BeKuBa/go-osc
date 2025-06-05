@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func main() {
 	addr := "127.0.0.1:8765"
 
-	server, err := osc.NewServerAndClient(addr)
+	server, err := osc.NewNode(addr)
 	if err != nil {
 		log.Fatal(err)
 	}

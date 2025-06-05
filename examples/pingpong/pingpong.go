@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	addr2 := "127.0.0.1:9000"
 	addr3 := "127.0.0.1:9001"
 
-	app1, err := osc.NewServerAndClient(addr2)
+	app1, err := osc.NewNode(addr2)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	app2, err := osc.NewServerAndClient(addr1)
+	app2, err := osc.NewNode(addr1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	app3, err := osc.NewServerAndClient(addr3)
+	app3, err := osc.NewNode(addr3)
 	if err != nil {
 		log.Fatal(err)
 	}

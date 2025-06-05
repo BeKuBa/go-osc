@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 )
 
 func TestParsePacket(t *testing.T) {
@@ -26,6 +26,12 @@ func TestParsePacket(t *testing.T) {
 			"string_arg",
 			"/d/e/f" + nulls(2) + ",s" + nulls(2) + "foo" + nulls(1),
 			makePacket("/d/e/f", []string{"foo"}),
+			true,
+		},
+		{
+			"empty_string_arg",
+			"/d/e/g" + nulls(2) + ",s" + nulls(2) + "" + nulls(4),
+			makePacket("/d/e/g", []string{""}),
 			true,
 		},
 		{"empty", "", nil, false},

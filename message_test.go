@@ -3,7 +3,7 @@ package osc_test
 import (
 	"testing"
 
-	"bekuba/go-osc"
+	"bekuba.de/go-osc"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -150,7 +150,7 @@ func TestOscMessageMatch(t *testing.T) {
 	for _, tt := range tc {
 		msg := osc.NewMessage(tt.addr)
 
-		got := msg.Match(tt.addrPattern)
+		got, _ := msg.Match(tt.addrPattern)
 		if got != tt.want {
 			t.Errorf("%s: msg('%v').Match('%s') = '%t', want = '%t'", tt.desc, tt.addr, tt.addrPattern, got, tt.want)
 		}
@@ -275,8 +275,15 @@ func TestClearMessage(t *testing.T) {
 	assert.Equal(t, 0, len(msg.Arguments))
 }
 
-func TestMatchPanic(t *testing.T) {
+func TestMatchError(t *testing.T) {
 	msg := osc.NewMessage("}/")
-	assert.Panics(t, func() { _ = msg.Match("/msg") })
+	b, err := msg.Match("msg")
+	assert.Equal(t, false, b)
+	assert.Error(t, err)
+}
 
+func TestEmptyString(t *testing.T) {
+	msg := osc.NewMessage("/msg", "")
+
+	assert.Equal(t, "", msg.Arguments[0])
 }

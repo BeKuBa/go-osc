@@ -7,7 +7,7 @@
 
 This repository is a heavily modified fork of the [original go-osc](https://github.com/hypebeast/go-osc) started by https://github.com/crgimenes. Please consider using the original project [original go-osc](https://github.com/hypebeast/go-osc).
 
-Version 0.0.1 is not compatible with further versions. But it is easy to migrate.
+Version 0.5.0 is not compatible with further versions. But it is easy to migrate.
 
 ## Features
 
@@ -27,12 +27,6 @@ Version 0.0.1 is not compatible with further versions. But it is easy to migrate
   - 'F' (False)
   - 'N' (Nil)
 - Support for OSC address pattern including '\*', '?', '{,}' and '[]' wildcards
-
-## Install
-
-```shell
-go get github.com/bekuba/go-osc
-```
 
 ## Usage
 
