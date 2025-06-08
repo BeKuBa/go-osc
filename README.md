@@ -31,7 +31,7 @@ Version 0.5.0 is not compatible with further versions. But it is easy to migrate
 ## Usage
 
 See exambles.</br>
-There is only one object that can act as "OSC server" AND/OR "OSC client".
+There is only one object that is an "OSC server" AND/OR "OSC client". This object can send and recieve OSC messages.
 ( OSC Spec. 1.0: "Any application that sends OSC Packets is an OSC Client; any application that receives OSC Packets is an OSC Server.")
 
 ### Server and Client Ping Pong
